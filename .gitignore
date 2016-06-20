@@ -45,3 +45,14 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+external/*
+bin/*
+*.suo
+*.db
+*.opendb
+*.log
+*.lastbuildstate
+*.tlog
+msw_14/Debug/*
+msw_14/Release/*
