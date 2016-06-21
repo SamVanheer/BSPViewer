@@ -1,7 +1,8 @@
-
-
+#include "app/CApp.h"
 
 int main( int iArgc, char* pszArgV[] )
 {
-	return 0;
+	CApp app;
+
+	return app.Run( iArgc, pszArgV );
 }

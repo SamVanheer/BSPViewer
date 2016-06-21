@@ -1,0 +1,9 @@
+#version 140
+
+in vec2 LVertexPos2D;
+uniform mat4 matProj;
+
+void main()
+{
+	gl_Position = matProj * vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 );
+}
