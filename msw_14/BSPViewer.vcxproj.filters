@@ -34,6 +34,18 @@
     <Filter Include="Header Files\common">
       <UniqueIdentifier>{038af33e-8747-41a5-b9bb-c71a8adda3f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bsp">
+      <UniqueIdentifier>{8e29a78d-ab42-4e85-be31-3bd564d7bf56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bsp">
+      <UniqueIdentifier>{a166ecb2-3999-4e42-b4ba-469cb16ea715}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utility">
+      <UniqueIdentifier>{cbee7358-758b-4cc0-a910-ce0987dbd426}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utility">
+      <UniqueIdentifier>{2ade4e6a-4327-4850-9b0d-4f6976166def}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Main.cpp">
@@ -56,6 +68,12 @@
     </ClCompile>
     <ClCompile Include="..\src\gl\CShaderManager.cpp">
       <Filter>Source Files\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bsp\BSPIO.cpp">
+      <Filter>Source Files\bsp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utility\ByteSwap.cpp">
+      <Filter>Source Files\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +100,24 @@
     </ClInclude>
     <ClInclude Include="..\src\common\StringUtils.h">
       <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\BSPConstants.h">
+      <Filter>Header Files\bsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\BSPFile.h">
+      <Filter>Header Files\bsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\BSPIO.h">
+      <Filter>Header Files\bsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\Const.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\Mathlib.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\ByteSwap.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

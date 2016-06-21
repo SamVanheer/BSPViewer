@@ -17,6 +17,8 @@
 
 #include "gl/CBaseShader.h"
 
+#include "bsp/BSPIO.h"
+
 #include "CApp.h"
 
 int CApp::Run( int iArgc, char* pszArgV[] )
@@ -26,6 +28,20 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 	if( bSuccess )
 	{
 		printf( "CApp::Initialize succeeded\n" );
+
+		//Too big to put onto the stack - Solokiller
+		CBSPFile* pFile = new CBSPFile;
+
+		if( LoadBSPFile( "external/datacore.bsp", *pFile ) )
+		{
+			printf( "loaded BSP file\n" );
+		}
+		else
+		{
+			printf( "Failed to load BSP file\n" );
+		}
+
+		delete pFile;
 
 		bSuccess = RunApp();
 	}
