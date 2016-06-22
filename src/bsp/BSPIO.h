@@ -10,8 +10,12 @@
 #ifndef BSP_BSPIO_H
 #define BSP_BSPIO_H
 
+#include <memory>
+
 #include "BSPConstants.h"
 #include "BSPFile.h"
+
+std::unique_ptr<dheader_t> LoadBSPFile( const char* const pszFileName );
 
 bool LoadBSPFile( const char* const pszFileName, CBSPFile& file );
 

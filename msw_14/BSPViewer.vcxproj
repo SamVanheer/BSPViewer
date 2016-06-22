@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\app\CApp.cpp" />
     <ClCompile Include="..\src\bsp\BSPIO.cpp" />
+    <ClCompile Include="..\src\bsp\BSPRenderIO.cpp" />
     <ClCompile Include="..\src\gl\CBaseShader.cpp" />
     <ClCompile Include="..\src\gl\CPolygonShader.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
@@ -104,6 +105,8 @@
     <ClInclude Include="..\src\bsp\BSPConstants.h" />
     <ClInclude Include="..\src\bsp\BSPFile.h" />
     <ClInclude Include="..\src\bsp\BSPIO.h" />
+    <ClInclude Include="..\src\bsp\BSPRenderDefs.h" />
+    <ClInclude Include="..\src\bsp\BSPRenderIO.h" />
     <ClInclude Include="..\src\common\Const.h" />
     <ClInclude Include="..\src\common\StringUtils.h" />
     <ClInclude Include="..\src\gl\CBaseShader.h" />

@@ -75,6 +75,9 @@
     <ClCompile Include="..\src\utility\ByteSwap.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bsp\BSPRenderIO.cpp">
+      <Filter>Source Files\bsp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ui\CWindow.h">
@@ -118,6 +121,12 @@
     </ClInclude>
     <ClInclude Include="..\src\utility\ByteSwap.h">
       <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\BSPRenderIO.h">
+      <Filter>Header Files\bsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\BSPRenderDefs.h">
+      <Filter>Header Files\bsp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

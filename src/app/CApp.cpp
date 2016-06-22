@@ -18,6 +18,7 @@
 #include "gl/CBaseShader.h"
 
 #include "bsp/BSPIO.h"
+#include "bsp/BSPRenderIO.h"
 
 #include "CApp.h"
 
@@ -29,19 +30,20 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 	{
 		printf( "CApp::Initialize succeeded\n" );
 
-		//Too big to put onto the stack - Solokiller
-		CBSPFile* pFile = new CBSPFile;
+		auto header = LoadBSPFile( "external/datacore.bsp" );
 
-		if( LoadBSPFile( "external/datacore.bsp", *pFile ) )
+		bmodel_t model;
+
+		memset( &model, 0, sizeof( bmodel_t ) );
+
+		if( BSP::LoadBrushModel( &model, header.get() ) )
 		{
-			printf( "loaded BSP file\n" );
+			printf( "Loaded BSP\n" );
 		}
 		else
 		{
-			printf( "Failed to load BSP file\n" );
+			printf( "Couldn't load BSP\n" );
 		}
-
-		delete pFile;
 
 		bSuccess = RunApp();
 	}

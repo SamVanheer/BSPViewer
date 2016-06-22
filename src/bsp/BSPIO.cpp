@@ -60,19 +60,16 @@ void FastBSPDataChecksum( DATA& data )
 	data.checksum = FastChecksum( data.data, data.count * sizeof( DATA::Type_t ) );
 }
 
-bool LoadBSPFile( const char* const pszFileName, CBSPFile& file )
+std::unique_ptr<dheader_t> LoadBSPFile( const char* const pszFileName )
 {
 	assert( pszFileName );
-
-	//That's one big chunk of memory.
-	memset( &file, 0, sizeof( file ) );
 
 	FILE* pFile = fopen( pszFileName, "rb" );
 
 	if( !pFile )
 	{
 		printf( "Couldn't open BSP file \"%s\"\n", pszFileName );
-		return false;
+		return nullptr;
 	}
 
 	fseek( pFile, 0, SEEK_END );
@@ -81,20 +78,37 @@ bool LoadBSPFile( const char* const pszFileName, CBSPFile& file )
 
 	fseek( pFile, 0, SEEK_SET );
 
+	std::unique_ptr<dheader_t> header( reinterpret_cast<dheader_t*>( new byte[ size ] ) );
+
+	dheader_t* pHeader = header.get();
+
+	const size_t readCount = fread( header.get(), 1, size, pFile );
+
+	fclose( pFile );
+
+	if( readCount != size )
 	{
-		std::unique_ptr<dheader_t> header( reinterpret_cast<dheader_t*>( new byte[ size ] ) );
+		printf( "Error reading BSP file \"%s\": expected %u bytes, read %u\n", pszFileName, size, readCount );
+		return nullptr;
+	}
+
+	return header;
+}
+
+bool LoadBSPFile( const char* const pszFileName, CBSPFile& file )
+{
+	assert( pszFileName );
+
+	//That's one big chunk of memory.
+	memset( &file, 0, sizeof( file ) );
+
+	{
+		std::unique_ptr<dheader_t> header( LoadBSPFile( pszFileName ) );
+
+		if( !header )
+			return false;
 
 		dheader_t* pHeader = header.get();
-
-		const size_t readCount = fread( header.get(), 1, size, pFile );
-
-		fclose( pFile );
-
-		if( readCount != size )
-		{
-			printf( "Error reading BSP file \"%s\": expected %u bytes, read %u\n", pszFileName, size, readCount );
-			return false;
-		}
 
 		for( size_t uiIndex = 0; uiIndex < sizeof( dheader_t ) / 4; ++uiIndex )
 		{

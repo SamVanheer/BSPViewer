@@ -12,4 +12,6 @@
 
 typedef unsigned char byte;
 
+#define	MAX_QPATH		64			// max length of a quake game pathname
+
 #endif //COMMON_CONST_H

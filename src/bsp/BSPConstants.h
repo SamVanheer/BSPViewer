@@ -82,15 +82,20 @@ enum BSPLump
 	HEADER_LUMPS		= 15
 };
 
-// 0-2 are axial planes
-#define	PLANE_X			0
-#define	PLANE_Y			1
-#define	PLANE_Z			2
-
-// 3-5 are non-axial planes snapped to the nearest
-#define	PLANE_ANYX		3
-#define	PLANE_ANYY		4
-#define	PLANE_ANYZ		5
+/**
+*	0-2 are axial planes
+*	3-5 are non-axial planes snapped to the nearest
+*/
+enum PlaneType
+{
+	PLANE_X		= 0,
+	PLANE_Y		= 1,
+	PLANE_Z		= 2,
+ 
+	PLANE_ANYX	= 3,
+	PLANE_ANYY	= 4,
+	PLANE_ANYZ	= 5,
+};
 
 #define	CONTENTS_EMPTY		-1
 #define	CONTENTS_SOLID		-2

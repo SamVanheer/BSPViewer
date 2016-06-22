@@ -388,7 +388,7 @@ typedef BSPData<int, MAX_MAP_SURFEDGES> surfedges_data;
 
 /**
 *	A single BSP file.
-*	TODO: currently stores all of its data as huge arrays. Maybe consider an alternate approach - Solokiller
+*	This data structure is unsuitable for anything other than evaluating the file's contents.
 */
 class CBSPFile
 {
