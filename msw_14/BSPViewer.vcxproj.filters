@@ -78,6 +78,9 @@
     <ClCompile Include="..\src\bsp\BSPRenderIO.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\utility\Tokenization.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ui\CWindow.h">
@@ -127,6 +130,9 @@
     </ClInclude>
     <ClInclude Include="..\src\bsp\BSPRenderDefs.h">
       <Filter>Header Files\bsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utility\Tokenization.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

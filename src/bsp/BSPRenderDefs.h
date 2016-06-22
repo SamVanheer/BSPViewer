@@ -128,6 +128,9 @@ struct texture_t
 #define SURF_DRAWBACKGROUND	0x40
 #define SURF_UNDERWATER		0x80
 
+#define	BLOCK_WIDTH		128
+#define	BLOCK_HEIGHT	128
+
 /**
 *	Represents a surface edge.
 *	!!! if this is changed, it must be changed in asm_draw.h too !!!

@@ -11,6 +11,8 @@
 namespace BSP
 {
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader );
+
+void FreeModel( bmodel_t* pModel );
 }
 
 #endif //BSP_BSPRENDERIO_H

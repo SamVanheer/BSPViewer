@@ -93,6 +93,8 @@ void CWindowManager::Shutdown()
 
 	DestroyAllWindows();
 
+	m_Windows.shrink_to_fit();
+
 	SDL_Quit();
 }
 

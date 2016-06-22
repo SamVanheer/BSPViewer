@@ -99,6 +99,7 @@
     <ClCompile Include="..\src\ui\CWindow.cpp" />
     <ClCompile Include="..\src\ui\CWindowManager.cpp" />
     <ClCompile Include="..\src\utility\ByteSwap.cpp" />
+    <ClCompile Include="..\src\utility\Tokenization.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\app\CApp.h" />
@@ -117,6 +118,7 @@
     <ClInclude Include="..\src\ui\CWindowManager.h" />
     <ClInclude Include="..\src\utility\ByteSwap.h" />
     <ClInclude Include="..\src\utility\Mathlib.h" />
+    <ClInclude Include="..\src\utility\Tokenization.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

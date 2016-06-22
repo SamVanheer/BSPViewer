@@ -2,7 +2,10 @@
 #include <cstdio>
 #include <memory>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "utility/ByteSwap.h"
+#include "utility/Tokenization.h"
 
 #include "BSPRenderIO.h"
 
@@ -126,9 +129,6 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		return true;
 	}
 
-	//TODO: half-life BSPs store textures in a different manner. Rework this function to handle it - Solokiller
-	return true;
-
 	dmiptexlump_t* m = ( dmiptexlump_t* ) ( mod_base + l->fileofs );
 
 	m->nummiptex = LittleValue( m->nummiptex );
@@ -159,10 +159,16 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		memcpy( tx->name, mt->name, sizeof( tx->name ) );
 		tx->width = mt->width;
 		tx->height = mt->height;
-		for( j = 0; j<MIPLEVELS; j++ )
-			tx->offsets[ j ] = mt->offsets[ j ] + sizeof( texture_t ) - sizeof( miptex_t );
-		// the pixels immediately follow the structures
-		memcpy( tx + 1, mt + 1, pixels );
+
+		//Embedded texture.
+		//TODO: load wad files to get external textures - Solokiller
+		if( mt->offsets[ 0 ] != 0 )
+		{
+			for( j = 0; j<MIPLEVELS; j++ )
+				tx->offsets[ j ] = mt->offsets[ j ] + sizeof( texture_t ) - sizeof( miptex_t );
+			// the pixels immediately follow the structures
+			memcpy( tx + 1, mt + 1, pixels );
+		}
 
 
 		/*
@@ -432,14 +438,203 @@ bool Mod_LoadTexinfo( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 	return true;
 }
 
-void CalcSurfaceExtents( msurface_t* pSurf )
+/*
+================
+CalcSurfaceExtents
+
+Fills in s->texturemins[] and s->extents[]
+================
+*/
+bool CalcSurfaceExtents( bmodel_t* pModel, msurface_t *s )
 {
-	//TODO: implement
+	float	mins[ 2 ], maxs[ 2 ], val;
+	int		i, j, e;
+	mvertex_t	*v;
+	mtexinfo_t	*tex;
+	int		bmins[ 2 ], bmaxs[ 2 ];
+
+	mins[ 0 ] = mins[ 1 ] = 999999;
+	maxs[ 0 ] = maxs[ 1 ] = -99999;
+
+	tex = s->texinfo;
+
+	for( i = 0; i<s->numedges; i++ )
+	{
+		e = pModel->surfedges[ s->firstedge + i ];
+		if( e >= 0 )
+			v = &pModel->vertexes[ pModel->edges[ e ].v[ 0 ] ];
+		else
+			v = &pModel->vertexes[ pModel->edges[ -e ].v[ 1 ] ];
+
+		for( j = 0; j<2; j++ )
+		{
+			val = v->position[ 0 ] * tex->vecs[ j ][ 0 ] +
+				v->position[ 1 ] * tex->vecs[ j ][ 1 ] +
+				v->position[ 2 ] * tex->vecs[ j ][ 2 ] +
+				tex->vecs[ j ][ 3 ];
+			if( val < mins[ j ] )
+				mins[ j ] = val;
+			if( val > maxs[ j ] )
+				maxs[ j ] = val;
+		}
+	}
+
+	for( i = 0; i<2; i++ )
+	{
+		bmins[ i ] = static_cast<int>( floor( mins[ i ] / 16 ) );
+		bmaxs[ i ] = static_cast<int>( ceil( maxs[ i ] / 16 ) );
+
+		s->texturemins[ i ] = bmins[ i ] * 16;
+		s->extents[ i ] = ( bmaxs[ i ] - bmins[ i ] ) * 16;
+		if( !( tex->flags & TEX_SPECIAL ) && s->extents[ i ] > 512 /* 256 */ )
+		{
+			printf( "Bad surface extents\n" );
+			return false;
+		}
+	}
+
+	return true;
 }
 
-void GL_SubdivideSurface( msurface_t* pSurf )
+void BoundPoly( int numverts, Vector* verts, Vector& mins, Vector& maxs )
 {
-	//TODO: implement
+	//TODO: change to INT_MIN & INT_MAX to prevent large maps from breaking - Solokiller
+	mins[ 0 ] = mins[ 1 ] = mins[ 2 ] = 9999;
+	maxs[ 0 ] = maxs[ 1 ] = maxs[ 2 ] = -9999;
+
+	float* v = glm::value_ptr( *verts );
+
+	for( int i = 0; i<numverts; i++ )
+		for( int j = 0; j<3; j++, v++ )
+		{
+			if( *v < mins[ j ] )
+				mins[ j ] = *v;
+			if( *v > maxs[ j ] )
+				maxs[ j ] = *v;
+		}
+}
+
+bool SubdividePolygon( msurface_t* pSurface, int numverts, Vector* verts )
+{
+	int		i, j, k;
+	Vector	mins, maxs;
+	float	m;
+	Vector	*v;
+	Vector	front[ 64 ], back[ 64 ];
+	int		f, b;
+	float	dist[ 64 ];
+	float	frac;
+	glpoly_t	*poly;
+	float	s, t;
+
+	if( numverts > 60 )
+	{
+		printf( "numverts = %i", numverts );
+		return false;
+	}
+
+	BoundPoly( numverts, verts, mins, maxs );
+
+	for( i = 0; i<3; i++ )
+	{
+		m = ( mins[ i ] + maxs[ i ] ) * 0.5f;
+		m = /*gl_subdivide_size.value*/ 128 * floor( m / 28 + 0.5f );
+		if( maxs[ i ] - m < 8 )
+			continue;
+		if( m - mins[ i ] < 8 )
+			continue;
+
+		// cut it
+		v = verts + i;
+		for( j = 0; j<numverts; j++, ++v )
+			dist[ j ] = ( *v ).x - m;
+
+		// wrap cases
+		dist[ j ] = dist[ 0 ];
+		v -= i;
+		*v = *verts;
+
+		f = b = 0;
+		v = verts;
+		for( j = 0; j<numverts; j++, v += 3 )
+		{
+			if( dist[ j ] >= 0 )
+			{
+				front[ f ] = *v;
+				f++;
+			}
+			if( dist[ j ] <= 0 )
+			{
+				back[ b ] = *v;
+				b++;
+			}
+			if( dist[ j ] == 0 || dist[ j + 1 ] == 0 )
+				continue;
+			if( ( dist[ j ] > 0 ) != ( dist[ j + 1 ] > 0 ) )
+			{
+				// clip point
+				frac = dist[ j ] / ( dist[ j ] - dist[ j + 1 ] );
+				for( k = 0; k<3; k++ )
+					front[ f ][ k ] = back[ b ][ k ] = ( *v )[ k ] + frac*( ( *v )[ 3 + k ] - ( *v )[ k ] );
+				f++;
+				b++;
+			}
+		}
+
+		SubdividePolygon( pSurface, f, front );
+		SubdividePolygon( pSurface, b, back );
+		return true;
+	}
+
+	poly = reinterpret_cast<glpoly_t*>( new byte[ sizeof( glpoly_t ) + ( numverts - 4 ) * VERTEXSIZE * sizeof( float ) ] );
+
+	poly->next = pSurface->polys;
+	pSurface->polys = poly;
+	poly->numverts = numverts;
+	for( i = 0; i<numverts; i++, ++verts )
+	{
+		*reinterpret_cast<Vector*>( &poly->verts[ i ] ) = *verts;
+		s = glm::dot( *verts, *reinterpret_cast<Vector*>( &pSurface->texinfo->vecs[ 0 ] ) );
+		t = glm::dot( *verts, *reinterpret_cast<Vector*>( &pSurface->texinfo->vecs[ 1 ] ) );
+		poly->verts[ i ][ 3 ] = s;
+		poly->verts[ i ][ 4 ] = t;
+	}
+
+	return true;
+}
+
+/*
+================
+GL_SubdivideSurface
+
+Breaks a polygon up along axial 64 unit
+boundaries so that turbulent and sky warps
+can be done reasonably.
+================
+*/
+bool GL_SubdivideSurface( bmodel_t* pModel, msurface_t *fa )
+{
+	Vector		verts[ 64 ];
+	int			lindex;
+	Vector* pVec;
+
+	//
+	// convert edges back to a normal polygon
+	//
+	int numverts = 0;
+	for( int i = 0; i<fa->numedges; i++ )
+	{
+		lindex = pModel->surfedges[ fa->firstedge + i ];
+
+		if( lindex > 0 )
+			pVec = &pModel->vertexes[ pModel->edges[ lindex ].v[ 0 ] ].position;
+		else
+			pVec = &pModel->vertexes[ pModel->edges[ -lindex ].v[ 1 ] ].position;
+		verts[ numverts ] = *pVec;
+		numverts++;
+	}
+
+	return SubdividePolygon( fa, numverts, verts );
 }
 
 /*
@@ -464,6 +659,8 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 	const size_t count = l->filelen / sizeof( *in );
 	msurface_t* out = new msurface_t[ count ];
 
+	memset( out, 0, sizeof( msurface_t ) * count );
+
 	pModel->surfaces = out;
 	pModel->numsurfaces = count;
 
@@ -484,7 +681,10 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 
 		out->texinfo = pModel->texinfo + LittleValue( in->texinfo );
 
-		CalcSurfaceExtents( out );
+		if( !CalcSurfaceExtents( pModel, out ) )
+		{
+			return false;
+		}
 
 		// lighting info
 
@@ -502,7 +702,9 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		{
 			out->flags |= ( SURF_DRAWSKY | SURF_DRAWTILED );
 #ifndef QUAKE2
-			GL_SubdivideSurface( out );	// cut up polygon for warps
+			// cut up polygon for warps
+			if( !GL_SubdivideSurface( pModel, out ) )
+				return false;
 #endif
 			continue;
 		}
@@ -512,10 +714,13 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 			out->flags |= ( SURF_DRAWTURB | SURF_DRAWTILED );
 			for( i = 0; i<2; i++ )
 			{
+				//TODO: if these are used in GoldSource, tune them so they can fit in large maps - Solokiller
 				out->extents[ i ] = 16384;
 				out->texturemins[ i ] = -8192;
 			}
-			GL_SubdivideSurface( out );	// cut up polygon for warps
+			// cut up polygon for warps
+			if( !GL_SubdivideSurface( pModel, out ) )
+				return false;
 			continue;
 		}
 
@@ -906,7 +1111,7 @@ bmodel_t* Mod_FindName( char* name )
 	if( !name[ 0 ] )
 	{
 		printf( "Mod_ForName: NULL name" );
-		return false;
+		return nullptr;
 	}
 
 	//
@@ -928,6 +1133,164 @@ bmodel_t* Mod_FindName( char* name )
 	}
 
 	return mod;
+}
+
+bool FindWadList( const bmodel_t* pModel, char*& pszWadList )
+{
+	assert( pModel );
+
+	pszWadList = nullptr;
+
+	if( pModel->entities )
+	{
+		char* pszNext = pModel->entities;
+
+		while( true )
+		{
+			char* pszNextToken = COM_Parse( pszNext );
+
+			if( !pszNextToken || !( *pszNextToken ) || com_token[ 0 ] == '}' )
+			{
+				break;
+			}
+
+			pszNext = pszNextToken;
+
+			if( strcmp( com_token, "wad" ) == 0 )
+			{
+				COM_Parse( pszNextToken );
+
+				//com_token is the wad path list - Solokiller
+				const size_t uiLength = strlen( com_token );
+
+				pszWadList = new char[ uiLength + 1 ];
+
+				strcpy( pszWadList, com_token );
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+================
+BuildSurfaceDisplayList
+================
+*/
+void BuildSurfaceDisplayList( bmodel_t* pModel, msurface_t *fa )
+{
+	int			i, lindex, lnumverts;
+	Vector		local, transformed;
+	medge_t		*pedges, *r_pedge;
+	int			vertpage;
+	Vector		*vec;
+	float		s, t;
+
+	// reconstruct the polygon
+	pedges = pModel->edges;
+	lnumverts = fa->numedges;
+	vertpage = 0;
+
+	//
+	// draw texture
+	//
+	const size_t uiSize = sizeof( glpoly_t ) + ( lnumverts - 4 ) * VERTEXSIZE * sizeof( float );
+
+	glpoly_t* poly = reinterpret_cast<glpoly_t*>( new byte[ uiSize ] );
+
+	memset( poly, 0, uiSize );
+
+	poly->next = fa->polys;
+	poly->flags = fa->flags;
+	fa->polys = poly;
+	poly->numverts = lnumverts;
+
+	for( i = 0; i<lnumverts; i++ )
+	{
+		lindex = pModel->surfedges[ fa->firstedge + i ];
+
+		if( lindex > 0 )
+		{
+			r_pedge = &pedges[ lindex ];
+			vec = &pModel->vertexes[ r_pedge->v[ 0 ] ].position;
+		}
+		else
+		{
+			r_pedge = &pedges[ -lindex ];
+			vec = &pModel->vertexes[ r_pedge->v[ 1 ] ].position;
+		}
+		s = glm::dot( *vec, *reinterpret_cast<Vector*>( &fa->texinfo->vecs[ 0 ] ) ) + fa->texinfo->vecs[ 0 ][ 3 ];
+		s /= fa->texinfo->texture->width;
+
+		t = glm::dot( *vec, *reinterpret_cast<Vector*>( &fa->texinfo->vecs[ 1 ] ) ) + fa->texinfo->vecs[ 1 ][ 3 ];
+		t /= fa->texinfo->texture->height;
+
+		*reinterpret_cast<Vector*>( &poly->verts[ i ] ) = *vec;
+		poly->verts[ i ][ 3 ] = s;
+		poly->verts[ i ][ 4 ] = t;
+
+		//
+		// lightmap texture coordinates
+		//
+		s = glm::dot( *vec, *reinterpret_cast<Vector*>( &fa->texinfo->vecs[ 0 ] ) ) + fa->texinfo->vecs[ 0 ][ 3 ];
+		s -= fa->texturemins[ 0 ];
+		s += fa->light_s * 16;
+		s += 8;
+		s /= BLOCK_WIDTH * 16; //fa->texinfo->texture->width;
+
+		t = glm::dot( *vec, *reinterpret_cast<Vector*>( &fa->texinfo->vecs[ 1 ] ) ) + fa->texinfo->vecs[ 1 ][ 3 ];
+		t -= fa->texturemins[ 1 ];
+		t += fa->light_t * 16;
+		t += 8;
+		t /= BLOCK_HEIGHT * 16; //fa->texinfo->texture->height;
+
+		poly->verts[ i ][ 5 ] = s;
+		poly->verts[ i ][ 6 ] = t;
+	}
+
+	//
+	// remove co-linear points - Ed
+	//
+	if( !false/*gl_keeptjunctions.value*/ && !( fa->flags & SURF_UNDERWATER ) )
+	{
+		for( i = 0; i < lnumverts; ++i )
+		{
+			Vector v1, v2;
+			Vector *prev, *cur, *next;
+
+			prev = reinterpret_cast<Vector*>( &poly->verts[ ( i + lnumverts - 1 ) % lnumverts ] );
+			cur = reinterpret_cast<Vector*>( &poly->verts[ i ] );
+			next = reinterpret_cast<Vector*>( &poly->verts[ ( i + 1 ) % lnumverts ] );
+
+			v1 = *cur - *prev;
+			v1 = glm::normalize( v1 );
+			v2 = *next - *prev;
+			v2 = glm::normalize( v2 );
+
+			// skip co-linear points
+#define COLINEAR_EPSILON 0.001
+			if( ( fabs( v1[ 0 ] - v2[ 0 ] ) <= COLINEAR_EPSILON ) &&
+				( fabs( v1[ 1 ] - v2[ 1 ] ) <= COLINEAR_EPSILON ) &&
+				( fabs( v1[ 2 ] - v2[ 2 ] ) <= COLINEAR_EPSILON ) )
+			{
+				int j;
+				for( j = i + 1; j < lnumverts; ++j )
+				{
+					int k;
+					for( k = 0; k < VERTEXSIZE; ++k )
+						poly->verts[ j - 1 ][ k ] = poly->verts[ j ][ k ];
+				}
+				--lnumverts;
+				// retry next vertex next time, which is now current vertex
+				--i;
+			}
+		}
+	}
+	poly->numverts = lnumverts;
+
 }
 
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
@@ -960,6 +1323,22 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 	if( !Mod_LoadSurfedges( pModel, pHeader, &pHeader->lumps[ LUMP_SURFEDGES ] ) )
 		return false;
 
+	//half-life loads entities first and looks for the wad key - Solokiller
+	if( !Mod_LoadEntities( pModel, pHeader, &pHeader->lumps[ LUMP_ENTITIES ] ) )
+		return false;
+
+	char* pszWadList = nullptr;
+
+	if( !FindWadList( pModel, pszWadList ) )
+	{
+		//TODO: is this supposed to be an error? - Solokiller
+		printf( "Couldn't find wad list!\n" );
+		return false;
+	}
+
+	//TODO: load wads - Solokiller
+	delete[] pszWadList;
+
 	if( !Mod_LoadTextures( pModel, pHeader, &pHeader->lumps[ LUMP_TEXTURES ] ) )
 		return false;
 
@@ -990,9 +1369,6 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 	if( !Mod_LoadClipnodes( pModel, pHeader, &pHeader->lumps[ LUMP_CLIPNODES ] ) )
 		return false;
 
-	if( !Mod_LoadEntities( pModel, pHeader, &pHeader->lumps[ LUMP_ENTITIES ] ) )
-		return false;
-
 	if( !Mod_LoadSubmodels( pModel, pHeader, &pHeader->lumps[ LUMP_MODELS ] ) )
 		return false;
 
@@ -1002,6 +1378,8 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 
 
 	dmodel_t* bm;
+
+	bmodel_t* pLoadModel;
 
 	//
 	// set up the submodels (FIXME: this is confusing)
@@ -1032,13 +1410,95 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 			char	name[ 10 ];
 
 			sprintf( name, "*%i", i + 1 );
-			pModel = Mod_FindName( name );
-			*pModel = *pModel;
-			strcpy( pModel->name, name );
-			pModel = pModel;
+			pLoadModel = Mod_FindName( name );
+
+			if( !pLoadModel )
+				return false;
+
+			*pLoadModel = *pModel;
+			strcpy( pLoadModel->name, name );
+			pModel = pLoadModel;
+		}
+	}
+
+	bmodel_t* pCurrentModel;
+
+	for( size_t j = 1; j<MAX_MOD_KNOWN; j++ )
+	{
+		pCurrentModel = &mod_known[ j ];
+		if( !pCurrentModel->name[ 0 ] )
+			break;
+		for( int i = 0; i<pCurrentModel->numsurfaces; i++ )
+		{
+			/*
+			GL_CreateSurfaceLightmap( m->surfaces + i );
+			if( m->surfaces[ i ].flags & SURF_DRAWTURB )
+				continue;
+#ifndef QUAKE2
+			if( m->surfaces[ i ].flags & SURF_DRAWSKY )
+				continue;
+#endif
+*/
+			BuildSurfaceDisplayList( pCurrentModel, pCurrentModel->surfaces + i );
 		}
 	}
 
 	return true;
+}
+
+void FreeModel( bmodel_t* pModel )
+{
+	if( !pModel )
+		return;
+
+	delete[] pModel->submodels;
+	delete[] pModel->planes;
+	delete[] pModel->leafs;
+	delete[] pModel->vertexes;
+	delete[] pModel->edges;
+	delete[] pModel->nodes;
+	delete[] pModel->texinfo;
+
+	msurface_t* pSurface = pModel->surfaces;
+	glpoly_t* pNextPoly;
+
+	for( int iIndex = 0; iIndex < pModel->numsurfaces; ++iIndex, ++pSurface )
+	{
+		for( glpoly_t* pPoly = pSurface->polys; pPoly; pPoly = pNextPoly )
+		{
+			pNextPoly = pPoly->next;
+
+			delete[] pPoly;
+		}
+	}
+
+	delete[] pModel->surfaces;
+	delete[] pModel->surfedges;
+	//Don't delete, deleted later on - Solokiller
+	//delete[] pModel->clipnodes;
+	delete[] pModel->marksurfaces;
+
+	texture_t** ppTexture = pModel->textures;
+
+	for( int iIndex = 0; iIndex < pModel->numtextures; ++iIndex, ++ppTexture )
+	{
+		delete *ppTexture;
+	}
+
+	delete[] pModel->textures;
+	delete[] pModel->visdata;
+	delete[] pModel->lightdata;
+	delete[] pModel->entities;
+
+	//Delete the clipping hulls for the first 2 hulls only, since the 3rd is the same as the 2nd and the 4th isn't used. - Solokiller
+	for( size_t uiIndex = 0; uiIndex < 2; ++uiIndex )
+	{
+		hull_t& hull = pModel->hulls[ uiIndex ];
+
+		delete[] hull.clipnodes;
+		//hull.planes is a pointer to memory managed by bmodel_t
+	}
+
+	memset( pModel, 0, sizeof( bmodel_t ) );
 }
 }

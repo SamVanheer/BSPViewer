@@ -45,6 +45,8 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 			printf( "Couldn't load BSP\n" );
 		}
 
+		BSP::FreeModel( &model );
+
 		bSuccess = RunApp();
 	}
 
