@@ -586,7 +586,11 @@ bool SubdividePolygon( msurface_t* pSurface, int numverts, Vector* verts )
 		return true;
 	}
 
-	poly = reinterpret_cast<glpoly_t*>( new byte[ sizeof( glpoly_t ) + ( numverts - 4 ) * VERTEXSIZE * sizeof( float ) ] );
+	const size_t uiSize = sizeof( glpoly_t ) + ( numverts - 4 ) * VERTEXSIZE * sizeof( float );
+
+	poly = reinterpret_cast<glpoly_t*>( new byte[ uiSize ] );
+
+	memset( poly, 0, uiSize );
 
 	poly->next = pSurface->polys;
 	pSurface->polys = poly;
@@ -599,6 +603,11 @@ bool SubdividePolygon( msurface_t* pSurface, int numverts, Vector* verts )
 		poly->verts[ i ][ 3 ] = s;
 		poly->verts[ i ][ 4 ] = t;
 	}
+
+	glGenBuffers( 1, &poly->VBO );
+	glBindBuffer( GL_ARRAY_BUFFER, poly->VBO );
+
+	glBufferData( GL_ARRAY_BUFFER, poly->numverts * VERTEXSIZE * sizeof( GLfloat ), poly->verts, GL_STATIC_DRAW );
 
 	return true;
 }
@@ -1291,6 +1300,10 @@ void BuildSurfaceDisplayList( bmodel_t* pModel, msurface_t *fa )
 	}
 	poly->numverts = lnumverts;
 
+	glGenBuffers( 1, &poly->VBO );
+	glBindBuffer( GL_ARRAY_BUFFER, poly->VBO );
+
+	glBufferData( GL_ARRAY_BUFFER, poly->numverts * VERTEXSIZE * sizeof( GLfloat ), poly->verts, GL_STATIC_DRAW );
 }
 
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
@@ -1381,6 +1394,8 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 
 	bmodel_t* pLoadModel;
 
+	bmodel_t* pOriginal = pModel;
+
 	//
 	// set up the submodels (FIXME: this is confusing)
 	//
@@ -1421,7 +1436,23 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 		}
 	}
 
+	pModel = pOriginal;
+
 	bmodel_t* pCurrentModel;
+
+	for( int i = 0; i<pModel->numsurfaces; i++ )
+	{
+		/*
+		GL_CreateSurfaceLightmap( m->surfaces + i );
+		if( m->surfaces[ i ].flags & SURF_DRAWTURB )
+		continue;
+		#ifndef QUAKE2
+		if( m->surfaces[ i ].flags & SURF_DRAWSKY )
+		continue;
+		#endif
+		*/
+		BuildSurfaceDisplayList( pModel, pModel->surfaces + i );
+	}
 
 	for( size_t j = 1; j<MAX_MOD_KNOWN; j++ )
 	{

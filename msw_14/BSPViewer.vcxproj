@@ -93,12 +93,15 @@
     <ClCompile Include="..\src\bsp\BSPIO.cpp" />
     <ClCompile Include="..\src\bsp\BSPRenderIO.cpp" />
     <ClCompile Include="..\src\gl\CBaseShader.cpp" />
+    <ClCompile Include="..\src\gl\CLightMappedGenericShader.cpp" />
     <ClCompile Include="..\src\gl\CPolygonShader.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
+    <ClCompile Include="..\src\gl\GLUtil.cpp" />
     <ClCompile Include="..\src\Main.cpp" />
     <ClCompile Include="..\src\ui\CWindow.cpp" />
     <ClCompile Include="..\src\ui\CWindowManager.cpp" />
     <ClCompile Include="..\src\utility\ByteSwap.cpp" />
+    <ClCompile Include="..\src\utility\CCamera.cpp" />
     <ClCompile Include="..\src\utility\Tokenization.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -111,12 +114,15 @@
     <ClInclude Include="..\src\common\Const.h" />
     <ClInclude Include="..\src\common\StringUtils.h" />
     <ClInclude Include="..\src\gl\CBaseShader.h" />
+    <ClInclude Include="..\src\gl\CLightMappedGenericShader.h" />
     <ClInclude Include="..\src\gl\CPolygonShader.h" />
     <ClInclude Include="..\src\gl\CShaderManager.h" />
+    <ClInclude Include="..\src\gl\GLUtil.h" />
     <ClInclude Include="..\src\ui\CWindow.h" />
     <ClInclude Include="..\src\ui\CWindowArgs.h" />
     <ClInclude Include="..\src\ui\CWindowManager.h" />
     <ClInclude Include="..\src\utility\ByteSwap.h" />
+    <ClInclude Include="..\src\utility\CCamera.h" />
     <ClInclude Include="..\src\utility\Mathlib.h" />
     <ClInclude Include="..\src\utility\Tokenization.h" />
   </ItemGroup>

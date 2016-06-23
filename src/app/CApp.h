@@ -1,7 +1,15 @@
 #ifndef APP_CAPP_H
 #define APP_CAPP_H
 
+#include <chrono>
+
+#include <SDL.h>
+
 #include <gl/glew.h>
+
+#include "bsp/BSPRenderDefs.h"
+
+#include "utility/CCamera.h"
 
 class CWindow;
 class CBaseShader;
@@ -11,6 +19,10 @@ class CBaseShader;
 */
 class CApp final
 {
+private:
+	static const float ROTATE_SPEED;
+	static const float MOVE_SPEED;
+
 public:
 	/**
 	*	Constructor.
@@ -51,12 +63,34 @@ private:
 	*/
 	void Render();
 
+	void Event( const SDL_Event& event );
+
+	void KeyEvent( const SDL_KeyboardEvent& event );
+
+	void MouseButtonEvent( const SDL_MouseButtonEvent& event );
+
+	void MouseMotionEvent( const SDL_MouseMotionEvent& event );
+
+	void MouseWheelEvent( const SDL_MouseWheelEvent& event );
+
 private:
 	CWindow* m_pWindow = nullptr;
 	CBaseShader* m_pPolygonShader = nullptr;
+	CBaseShader* m_pLightmapShader = nullptr;
 
 	GLuint m_VBO = 0;
 	GLuint m_IBO = 0;
+
+	bmodel_t m_Model;
+
+	CCamera m_Camera;
+
+	std::chrono::milliseconds m_StartTime = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+	std::chrono::milliseconds m_LastTick;
+	std::chrono::milliseconds m_LastFPSCheck;
+	float m_flDeltaTime = 0;
+	float m_flYawVel = 0;
+	float m_flPitchVel = 0;
 
 private:
 	CApp( const CApp& ) = delete;

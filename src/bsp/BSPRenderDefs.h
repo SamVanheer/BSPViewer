@@ -1,6 +1,8 @@
 #ifndef BSP_BSPRENDERDEFS_H
 #define BSP_BSPRENDERDEFS_H
 
+#include <gl/glew.h>
+
 #include "common/Const.h"
 #include "utility/Mathlib.h"
 #include "BSPConstants.h"
@@ -203,8 +205,14 @@ struct glpoly_t
 	int flags;
 
 	/**
+	*	Experimental. The OpenGL VBO ID.
+	*/
+	GLuint VBO;
+
+	/**
 	*	List of vertex commands.
 	*	variable sized (xyz s1t1 s2t2)
+	*	coordinate texture coordinates lightmap coordinates
 	*	Actual size is numverts
 	*/
 	float verts[ 4 ][ VERTEXSIZE ];

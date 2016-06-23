@@ -17,10 +17,15 @@
 
 #include "gl/CBaseShader.h"
 
+#include "gl/GLUtil.h"
+
 #include "bsp/BSPIO.h"
 #include "bsp/BSPRenderIO.h"
 
 #include "CApp.h"
+
+const float CApp::ROTATE_SPEED = 15.0f;
+const float CApp::MOVE_SPEED = 100.0f;
 
 int CApp::Run( int iArgc, char* pszArgV[] )
 {
@@ -30,24 +35,30 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 	{
 		printf( "CApp::Initialize succeeded\n" );
 
-		auto header = LoadBSPFile( "external/datacore.bsp" );
-
-		bmodel_t model;
-
-		memset( &model, 0, sizeof( bmodel_t ) );
-
-		if( BSP::LoadBrushModel( &model, header.get() ) )
 		{
-			printf( "Loaded BSP\n" );
-		}
-		else
-		{
-			printf( "Couldn't load BSP\n" );
+			auto header = LoadBSPFile( "external/test.bsp" );
+
+			memset( &m_Model, 0, sizeof( bmodel_t ) );
+
+			strcpy( m_Model.name, "external/test.bsp" );
+
+			if( BSP::LoadBrushModel( &m_Model, header.get() ) )
+			{
+				printf( "Loaded BSP\n" );
+			}
+			else
+			{
+				printf( "Couldn't load BSP\n" );
+			}
 		}
 
-		BSP::FreeModel( &model );
+		check_gl_error();
+
+		m_Camera.RotateYaw( -90.0f );
 
 		bSuccess = RunApp();
+
+		BSP::FreeModel( &m_Model );
 	}
 
 	Shutdown();
@@ -105,12 +116,25 @@ bool CApp::RunApp()
 	//Create VBO
 	glGenBuffers( 1, &m_VBO );
 	glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
-	glBufferData( GL_ARRAY_BUFFER, 2 * 4 * sizeof( GLfloat ), vertexData, GL_STATIC_DRAW );
+	//glBufferData( GL_ARRAY_BUFFER, 2 * 4 * sizeof( GLfloat ), vertexData, GL_STATIC_DRAW );
 
+	GLfloat polygon[] = 
+	{
+		-100, -100, 0, 0, 0, 0, 0,
+		-100, 100, 0, 0, 0, 0, 0,
+		100, 100, 0, 0, 0, 0, 0,
+		100, -100, 0, 0, 0, 0, 0,
+		-100, -100, 0, 0, 0, 0, 0
+	};
+
+	glBufferData( GL_ARRAY_BUFFER, sizeof( polygon ), polygon, GL_STATIC_DRAW );
+
+	/*
 	//Create IBO
 	glGenBuffers( 1, &m_IBO );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_IBO );
 	glBufferData( GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof( GLuint ), indexData, GL_STATIC_DRAW );
+	*/
 
 	//Main loop flag
 	bool quit = false;
@@ -123,6 +147,10 @@ bool CApp::RunApp()
 
 	//TODO: shaders should be managed in a different way. Eventually this will be solved - Solokiller
 	m_pPolygonShader = g_ShaderManager.GetShader( "Polygon" );
+
+	m_pLightmapShader = g_ShaderManager.GetShader( "LightMappedGeneric" );
+
+	check_gl_error();
 
 	//While application is running
 	while( !quit )
@@ -147,7 +175,24 @@ bool CApp::RunApp()
 			{
 				quit = true;
 			}
+
+			Event( e );
 		}
+
+		std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+
+		m_flDeltaTime = ( now - m_LastTick ).count() / 100.0f;
+
+		if( m_flDeltaTime > 1.0f )
+			m_flDeltaTime = 0.0f;
+
+		m_LastTick = now;
+
+		if( m_flYawVel )
+			m_Camera.RotateYaw( m_flDeltaTime * m_flYawVel );
+
+		if( m_flPitchVel )
+			m_Camera.RotatePitch( m_flDeltaTime * m_flPitchVel );
 
 		Render();
 	}
@@ -160,11 +205,27 @@ bool CApp::RunApp()
 
 void CApp::Render()
 {
-	glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+	check_gl_error();
 
-	//Render quad
-	//Clear color buffer
+	//Depth testing prevents objects that are further away from drawing on top of nearer objects
+	glEnable( GL_DEPTH_TEST );
+
+	check_gl_error();
+
+	//Cull back faces
+	glEnable( GL_CULL_FACE );
+
+	check_gl_error();
+
+	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	check_gl_error();
+
+	//We use clockwise order for triangle vertices
+	glFrontFace( GL_CW );
+
+	check_gl_error();
 
 	int width, height;
 
@@ -172,17 +233,29 @@ void CApp::Render()
 
 	glViewport( 0, 0, width, height );
 
-	glDisable( GL_DEPTH_TEST );
-	glDepthMask( GL_FALSE );
-
-	const double flAspect = static_cast<float>( width ) / static_cast<float>( height );
+	const float flAspect = static_cast<float>( width ) / static_cast<float>( height );
 
 	auto projection = glm::ortho( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 1.0f, -1.0f );
 
-	glm::mat4x4 view = glm::mat4x4();
+	projection = glm::perspective( glm::radians( 45.0f ), flAspect, 0.1f, 10000.0f );
+
+	glm::mat4x4 view;
+	
+	view = glm::mat4x4(
+		0, -1, 0, 0,
+		0, 0, 1, 0,
+		-1, 0, 0, 0,
+		0, 0, 0, 1 );
+
+	//m_Camera.SetPosition( glm::vec3( 10, 10, 10 ) );
+
+	view = m_Camera.GetViewMatrix();
+
+	//view = glm::lookAt( glm::vec3( 10, 10, 10 ), glm::vec3( 0, 0, 0 ), glm::vec3( 0, 0, 1 ) );
 
 	glm::mat4x4 model = glm::mat4x4();
 
+	/*
 	//Render quad
 	//Bind program
 	m_pPolygonShader->Bind();
@@ -200,10 +273,117 @@ void CApp::Render()
 
 	//Disable vertex position
 	m_pPolygonShader->DisableVAA();
+	*/
+
+	m_pLightmapShader->Bind();
+
+	check_gl_error();
+
+	m_pLightmapShader->EnableVAA();
+
+	check_gl_error();
+
+	glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
+
+	check_gl_error();
+
+	m_pLightmapShader->SetupParams( projection, view, model );
+
+	check_gl_error();
+
+	glDrawArrays( GL_POLYGON, 0, 5 );
+
+	check_gl_error();
+
+	msurface_t* pSurface = m_Model.surfaces;
+
+	for( int iIndex = 0; iIndex < m_Model.numsurfaces; ++iIndex, ++pSurface )
+	{
+		for( glpoly_t* pPoly = pSurface->polys; pPoly; pPoly = pPoly->chain )
+		{
+			for( glpoly_t* pPoly2 = pPoly; pPoly2; pPoly2 = pPoly2->next )
+			{
+				glBindBuffer( GL_ARRAY_BUFFER, pPoly2->VBO );
+
+				m_pLightmapShader->SetupParams( projection, view, model );
+
+				check_gl_error();
+
+				glDrawArrays( GL_POLYGON, 0, pPoly2->numverts );
+
+				check_gl_error();
+			}
+		}
+	}
+
+	m_pLightmapShader->DisableVAA();
 
 	//Unbind program
 	CBaseShader::Unbind();
 
 	//Update screen
 	m_pWindow->SwapGLBuffers();
+
+	check_gl_error();
+}
+
+void CApp::Event( const SDL_Event& event )
+{
+	switch( event.type )
+	{
+	case SDL_KEYDOWN:
+	case SDL_KEYUP:				KeyEvent( event.key ); break;
+
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:		MouseButtonEvent( event.button ); break;
+
+	case SDL_MOUSEMOTION:		MouseMotionEvent( event.motion ); break;
+
+	case SDL_MOUSEWHEEL:		MouseWheelEvent( event.wheel ); break;
+
+	default: break;
+	}
+}
+
+void CApp::KeyEvent( const SDL_KeyboardEvent& event )
+{
+	switch( event.type )
+	{
+	case SDL_KEYDOWN:
+		switch( event.keysym.sym )
+		{
+		case SDLK_LEFT:		m_flYawVel = -ROTATE_SPEED; break;
+		case SDLK_RIGHT:	m_flYawVel = ROTATE_SPEED; break;
+		case SDLK_UP:		m_flPitchVel = -ROTATE_SPEED; break;
+		case SDLK_DOWN:		m_flPitchVel = ROTATE_SPEED; break;
+		default: break;
+		}
+		break;
+
+	case SDL_KEYUP:
+		switch( event.keysym.sym )
+		{
+		case SDLK_LEFT:		m_flYawVel = 0; break;
+		case SDLK_RIGHT:	m_flYawVel = 0; break;
+		case SDLK_UP:		m_flPitchVel = 0; break;
+		case SDLK_DOWN:		m_flPitchVel = 0; break;
+		default: break;
+		}
+		break;
+	}
+}
+
+void CApp::MouseButtonEvent( const SDL_MouseButtonEvent& event )
+{
+}
+
+void CApp::MouseMotionEvent( const SDL_MouseMotionEvent& event )
+{
+}
+
+void CApp::MouseWheelEvent( const SDL_MouseWheelEvent& event )
+{
+	const glm::vec3 dir = m_Camera.GetDirection();
+
+	m_Camera.GetPosition() += dir * ( MOVE_SPEED * event.y );
 }
