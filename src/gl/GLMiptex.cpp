@@ -152,8 +152,6 @@ GLuint UploadMiptex( const miptex_t* pMiptex )
 
 	byte rgba[ PALETTE_ENTRIES * 4 ];
 
-	TexFormat_t format = TexFormat_t::SPR_NORMAL;
-
 	const byte* pBase = reinterpret_cast<const byte*>( pMiptex );
 
 	const byte* pPal = pBase + pMiptex->offsets[ 0 ] + ( ( pMiptex->width * pMiptex->height * 85 ) >> 6 );
@@ -164,6 +162,12 @@ GLuint UploadMiptex( const miptex_t* pMiptex )
 	}
 
 	pPal += sizeof( short );
+
+	TexFormat_t format = TexFormat_t::SPR_NORMAL;
+
+	//Partially transparent.
+	if( pMiptex->name[ 0 ] == '{' )
+		format = TexFormat_t::SPR_ALPHTEST;
 
 	Convert8To32Bit( pPal, rgba, format );
 

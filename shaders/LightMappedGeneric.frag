@@ -10,5 +10,14 @@ uniform sampler2D lightmap;
 
 void main()
 {
-	outColor = texture( tex, outVecTexCoord ) * texture( lightmap, outVecLightmapCoord );
+	vec4 texColor = texture( tex, outVecTexCoord );
+	
+	if( texColor.a > 0.5 )
+	{
+		outColor = texColor * texture( lightmap, outVecLightmapCoord );
+	}
+	else
+	{
+		discard;
+	}
 }

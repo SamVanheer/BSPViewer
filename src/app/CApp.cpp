@@ -45,7 +45,7 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 		g_WadManager.SetBasePath( "external" );
 
 		{
-			auto header = LoadBSPFile( "external/boot_camp.bsp" );
+			auto header = LoadBSPFile( "external/c2a5.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
@@ -291,6 +291,11 @@ void CApp::RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, d
 
 	for( int iIndex = 0; iIndex < model.nummodelsurfaces; ++iIndex, ++pSurface )
 	{
+		//Sky, origin, aaatrigger, etc. Don't draw these.
+		//TODO: add option to draw them.
+		if( pSurface->texinfo->flags & TEX_SPECIAL )
+			continue;
+
 		glActiveTexture( GL_TEXTURE0 + 1 );
 
 		check_gl_error();
