@@ -96,6 +96,7 @@
     <ClCompile Include="..\src\gl\CLightMappedGenericShader.cpp" />
     <ClCompile Include="..\src\gl\CPolygonShader.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
+    <ClCompile Include="..\src\gl\GLMiptex.cpp" />
     <ClCompile Include="..\src\gl\GLUtil.cpp" />
     <ClCompile Include="..\src\Main.cpp" />
     <ClCompile Include="..\src\ui\CWindow.cpp" />
@@ -103,6 +104,8 @@
     <ClCompile Include="..\src\utility\ByteSwap.cpp" />
     <ClCompile Include="..\src\utility\CCamera.cpp" />
     <ClCompile Include="..\src\utility\Tokenization.cpp" />
+    <ClCompile Include="..\src\wad\CWadManager.cpp" />
+    <ClCompile Include="..\src\wad\WadIO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\app\CApp.h" />
@@ -113,10 +116,12 @@
     <ClInclude Include="..\src\bsp\BSPRenderIO.h" />
     <ClInclude Include="..\src\common\Const.h" />
     <ClInclude Include="..\src\common\StringUtils.h" />
+    <ClInclude Include="..\src\core\Platform.h" />
     <ClInclude Include="..\src\gl\CBaseShader.h" />
     <ClInclude Include="..\src\gl\CLightMappedGenericShader.h" />
     <ClInclude Include="..\src\gl\CPolygonShader.h" />
     <ClInclude Include="..\src\gl\CShaderManager.h" />
+    <ClInclude Include="..\src\gl\GLMiptex.h" />
     <ClInclude Include="..\src\gl\GLUtil.h" />
     <ClInclude Include="..\src\ui\CWindow.h" />
     <ClInclude Include="..\src\ui\CWindowArgs.h" />
@@ -125,6 +130,11 @@
     <ClInclude Include="..\src\utility\CCamera.h" />
     <ClInclude Include="..\src\utility\Mathlib.h" />
     <ClInclude Include="..\src\utility\Tokenization.h" />
+    <ClInclude Include="..\src\wad\CWadFile.h" />
+    <ClInclude Include="..\src\wad\CWadManager.h" />
+    <ClInclude Include="..\src\wad\WadConstants.h" />
+    <ClInclude Include="..\src\wad\WadFile.h" />
+    <ClInclude Include="..\src\wad\WadIO.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

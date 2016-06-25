@@ -7,6 +7,9 @@
 #include "utility/ByteSwap.h"
 #include "utility/Tokenization.h"
 
+#include "gl/CShaderManager.h"
+#include "gl/CBaseShader.h"
+
 #include "BSPRenderIO.h"
 
 namespace BSP
@@ -135,6 +138,8 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 
 	pModel->numtextures = m->nummiptex;
 	pModel->textures = new texture_t*[ m->nummiptex ];
+
+	memset( pModel->textures, 0, sizeof( texture_t* ) * m->nummiptex );
 
 	for( i = 0; i<m->nummiptex; i++ )
 	{
@@ -514,6 +519,27 @@ void BoundPoly( int numverts, Vector* verts, Vector& mins, Vector& maxs )
 		}
 }
 
+//static size_t g_uiPolyCount = 0;
+
+void CreatePoly( glpoly_t* pPoly )
+{
+	//glGenVertexArrays( 1, &pPoly->VAO );
+	//glBindVertexArray( pPoly->VAO );
+
+	glGenBuffers( 1, &pPoly->VBO );
+	glBindBuffer( GL_ARRAY_BUFFER, pPoly->VBO );
+
+	glBufferData( GL_ARRAY_BUFFER, pPoly->numverts * VERTEXSIZE * sizeof( GLfloat ), pPoly->verts, GL_STATIC_DRAW );
+
+	g_ShaderManager.GetShader( "LightMappedGeneric" )->SetupVertexAttribs();
+
+	/*
+	++g_uiPolyCount;
+
+	printf( "Created poly %u%s\n", g_uiPolyCount, pPoly->next ? " (duplicate)" : "" );
+	*/
+}
+
 bool SubdividePolygon( msurface_t* pSurface, int numverts, Vector* verts )
 {
 	int		i, j, k;
@@ -604,10 +630,7 @@ bool SubdividePolygon( msurface_t* pSurface, int numverts, Vector* verts )
 		poly->verts[ i ][ 4 ] = t;
 	}
 
-	glGenBuffers( 1, &poly->VBO );
-	glBindBuffer( GL_ARRAY_BUFFER, poly->VBO );
-
-	glBufferData( GL_ARRAY_BUFFER, poly->numverts * VERTEXSIZE * sizeof( GLfloat ), poly->verts, GL_STATIC_DRAW );
+	CreatePoly( poly );
 
 	return true;
 }
@@ -707,6 +730,7 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 
 		// set the drawing flags flag
 
+		/*
 		if( !strncmp( out->texinfo->texture->name, "sky", 3 ) )	// sky
 		{
 			out->flags |= ( SURF_DRAWSKY | SURF_DRAWTILED );
@@ -732,6 +756,7 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 				return false;
 			continue;
 		}
+		*/
 
 	}
 
@@ -1101,8 +1126,6 @@ float RadiusFromBounds( const Vector& mins, const Vector& maxs )
 	return glm::length( corner );
 }
 
-#define MAX_MOD_KNOWN 512
-
 bmodel_t mod_known[ MAX_MOD_KNOWN ];
 int mod_numknown = 0;
 
@@ -1197,6 +1220,10 @@ void BuildSurfaceDisplayList( bmodel_t* pModel, msurface_t *fa )
 	int			vertpage;
 	Vector		*vec;
 	float		s, t;
+
+	//Regular brushes don't need multiple polygons - Solokiller
+	if( fa->polys )
+		return;
 
 	// reconstruct the polygon
 	pedges = pModel->edges;
@@ -1300,10 +1327,7 @@ void BuildSurfaceDisplayList( bmodel_t* pModel, msurface_t *fa )
 	}
 	poly->numverts = lnumverts;
 
-	glGenBuffers( 1, &poly->VBO );
-	glBindBuffer( GL_ARRAY_BUFFER, poly->VBO );
-
-	glBufferData( GL_ARRAY_BUFFER, poly->numverts * VERTEXSIZE * sizeof( GLfloat ), poly->verts, GL_STATIC_DRAW );
+	CreatePoly( poly );
 }
 
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
@@ -1443,11 +1467,11 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 	for( int i = 0; i<pModel->numsurfaces; i++ )
 	{
 		/*
-		GL_CreateSurfaceLightmap( m->surfaces + i );
-		if( m->surfaces[ i ].flags & SURF_DRAWTURB )
+		//GL_CreateSurfaceLightmap( m->surfaces + i );
+		if( pModel->surfaces[ i ].flags & SURF_DRAWTURB )
 		continue;
 		#ifndef QUAKE2
-		if( m->surfaces[ i ].flags & SURF_DRAWSKY )
+		if( pModel->surfaces[ i ].flags & SURF_DRAWSKY )
 		continue;
 		#endif
 		*/
@@ -1462,11 +1486,11 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 		for( int i = 0; i<pCurrentModel->numsurfaces; i++ )
 		{
 			/*
-			GL_CreateSurfaceLightmap( m->surfaces + i );
-			if( m->surfaces[ i ].flags & SURF_DRAWTURB )
+			//GL_CreateSurfaceLightmap( m->surfaces + i );
+			if( pCurrentModel->surfaces[ i ].flags & SURF_DRAWTURB )
 				continue;
 #ifndef QUAKE2
-			if( m->surfaces[ i ].flags & SURF_DRAWSKY )
+			if( pCurrentModel->surfaces[ i ].flags & SURF_DRAWSKY )
 				continue;
 #endif
 */

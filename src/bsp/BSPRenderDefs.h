@@ -210,6 +210,11 @@ struct glpoly_t
 	GLuint VBO;
 
 	/**
+	*	Experimental. The OpenGL VAO ID.
+	*/
+	GLuint VAO;
+
+	/**
 	*	List of vertex commands.
 	*	variable sized (xyz s1t1 s2t2)
 	*	coordinate texture coordinates lightmap coordinates

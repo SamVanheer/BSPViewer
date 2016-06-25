@@ -81,6 +81,11 @@ public:
 	*/
 	virtual void SetupParams( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model ) {}
 
+	/**
+	*	Set up vertex attributes for drawing.
+	*/
+	virtual void SetupVertexAttribs() {}
+
 protected:
 	/**
 	*	Called after compilation, before linking.

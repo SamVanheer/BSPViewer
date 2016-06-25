@@ -10,11 +10,11 @@ uniform mat4 matProj;
 uniform mat4 matView;
 uniform mat4 matModel;
 
-out vec2 vecColor;
+out vec2 outVecTexCoord;
 
 void main()
 {
 	gl_Position = matProj * matView * matModel * vec4( vecPosition, 1 );
 	
-	vecColor = vecTexCoord;
+	outVecTexCoord = vecTexCoord;
 }

@@ -44,8 +44,6 @@
 #define BSPVERSION	30
 #define	TOOLVERSION	2 //TODO: what is this for? - Solokiller
 
-#define	MIPLEVELS	4
-
 #define	MAXLIGHTMAPS	4
 
 #define	AMBIENT_WATER	0

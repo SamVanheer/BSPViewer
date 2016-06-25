@@ -22,9 +22,15 @@
 #include "bsp/BSPIO.h"
 #include "bsp/BSPRenderIO.h"
 
+#include "wad/WadIO.h"
+#include "wad/CWadFile.h"
+#include "wad/CWadManager.h"
+
+#include "gl/GLMiptex.h"
+
 #include "CApp.h"
 
-const float CApp::ROTATE_SPEED = 15.0f;
+const float CApp::ROTATE_SPEED = 120.0f;
 const float CApp::MOVE_SPEED = 100.0f;
 
 int CApp::Run( int iArgc, char* pszArgV[] )
@@ -35,8 +41,26 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 	{
 		printf( "CApp::Initialize succeeded\n" );
 
+		GLuint tex = 0;
+
 		{
-			auto header = LoadBSPFile( "external/test.bsp" );
+			//TODO Just a test - Solokiller
+			{
+				g_WadManager.SetBasePath( "external" );
+
+				g_WadManager.AddWad( "halflife" );
+
+				auto pTexture = g_WadManager.FindTextureByName( "POSTER1" );
+
+				if( pTexture )
+				{
+					printf( "Found texture %s\n", pTexture->name );
+
+					tex = UploadMiptex( pTexture );
+				}
+			}
+
+			auto header = LoadBSPFile( "external/boot_camp.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
@@ -45,6 +69,26 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 			if( BSP::LoadBrushModel( &m_Model, header.get() ) )
 			{
 				printf( "Loaded BSP\n" );
+
+				if( tex != 0 )
+				{
+					texture_t** pTexture = m_Model.textures;
+
+					for( int iTex = 0; iTex < m_Model.numtextures; ++iTex, ++pTexture )
+					{
+						if( pTexture )
+						{
+							( *pTexture )->gl_texturenum = tex;
+
+							auto pMiptex = g_WadManager.FindTextureByName( ( *pTexture )->name );
+
+							if( pMiptex )
+							{
+								( *pTexture )->gl_texturenum = UploadMiptex( pMiptex );
+							}
+						}
+					}
+				}
 			}
 			else
 			{
@@ -74,7 +118,7 @@ bool CApp::Initialize()
 
 	if( bSuccess )
 	{
-		m_pWindow = g_WindowManager.CreateWindow( CWindowArgs().Title( "BSP Viewer" ).Center().Size( 640, 480 ).Show().AddFlags( SDL_WINDOW_RESIZABLE ) );
+		m_pWindow = g_WindowManager.CreateWindow( CWindowArgs().Title( "BSP Viewer" ).Center().Size( 1024, 768 ).Show().AddFlags( SDL_WINDOW_RESIZABLE ) );
 
 		bSuccess = m_pWindow != nullptr;
 	}
@@ -181,20 +225,30 @@ bool CApp::RunApp()
 
 		std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
-		m_flDeltaTime = ( now - m_LastTick ).count() / 100.0f;
+		const auto diff = ( now - m_LastTick ).count();
 
-		if( m_flDeltaTime > 1.0f )
-			m_flDeltaTime = 0.0f;
+		//Frame limit
+		if( diff >= ( 1 / 60.0f ) )
+		{
+			m_flDeltaTime = diff / 1000.0f;
 
-		m_LastTick = now;
+			printf( "delta: %f\n", m_flDeltaTime );
 
-		if( m_flYawVel )
-			m_Camera.RotateYaw( m_flDeltaTime * m_flYawVel );
+			if( m_flDeltaTime > 1.0f )
+				m_flDeltaTime = 0.0f;
 
-		if( m_flPitchVel )
-			m_Camera.RotatePitch( m_flDeltaTime * m_flPitchVel );
+			printf( "delta: %f\n", m_flDeltaTime );
 
-		Render();
+			m_LastTick = now;
+
+			if( m_flYawVel )
+				m_Camera.RotateYaw( m_flDeltaTime * m_flYawVel );
+
+			if( m_flPitchVel )
+				m_Camera.RotatePitch( m_flDeltaTime * m_flPitchVel );
+
+			Render();
+		}
 	}
 
 	glDeleteBuffers( 1, &m_VBO );
@@ -218,7 +272,7 @@ void CApp::Render()
 	check_gl_error();
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	check_gl_error();
 
@@ -291,30 +345,63 @@ void CApp::Render()
 
 	check_gl_error();
 
+	m_pLightmapShader->SetupVertexAttribs();
+
+	check_gl_error();
+
 	glDrawArrays( GL_POLYGON, 0, 5 );
 
 	check_gl_error();
 
-	msurface_t* pSurface = m_Model.surfaces;
+	std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
-	for( int iIndex = 0; iIndex < m_Model.numsurfaces; ++iIndex, ++pSurface )
+	bmodel_t* pModel = &m_Model;
+
+	msurface_t* pSurface = pModel->surfaces;
+
+	size_t uiCount = 0;
+
+	double flTotal = 0;
+
+	for( int iIndex = 0; iIndex < pModel->numsurfaces; ++iIndex, ++pSurface )
 	{
 		for( glpoly_t* pPoly = pSurface->polys; pPoly; pPoly = pPoly->chain )
 		{
+			if( pSurface->texinfo->texture )
+				glBindTexture( GL_TEXTURE_2D, pSurface->texinfo->texture->gl_texturenum );
+			else
+				glBindTexture( GL_TEXTURE_2D, 0 );
+
+			check_gl_error();
+
+			//glpoly_t* pPoly2 = pPoly;
 			for( glpoly_t* pPoly2 = pPoly; pPoly2; pPoly2 = pPoly2->next )
 			{
+				std::chrono::milliseconds start = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+				//glBindVertexArray( pPoly2->VAO );
+
 				glBindBuffer( GL_ARRAY_BUFFER, pPoly2->VBO );
 
-				m_pLightmapShader->SetupParams( projection, view, model );
+				m_pLightmapShader->SetupVertexAttribs();
 
 				check_gl_error();
 
 				glDrawArrays( GL_POLYGON, 0, pPoly2->numverts );
 
 				check_gl_error();
+
+				++uiCount;
+
+				std::chrono::milliseconds end = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+
+				flTotal += ( end - start ).count();
 			}
 		}
 	}
+
+	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+
+	printf( "Time spent rendering frame (%u polygons, average (msec): %f): %f\n", uiCount, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
 
 	m_pLightmapShader->DisableVAA();
 
@@ -350,6 +437,7 @@ void CApp::KeyEvent( const SDL_KeyboardEvent& event )
 	switch( event.type )
 	{
 	case SDL_KEYDOWN:
+		printf( "key down\n" );
 		switch( event.keysym.sym )
 		{
 		case SDLK_LEFT:		m_flYawVel = -ROTATE_SPEED; break;
@@ -361,6 +449,7 @@ void CApp::KeyEvent( const SDL_KeyboardEvent& event )
 		break;
 
 	case SDL_KEYUP:
+		printf( "key up\n" );
 		switch( event.keysym.sym )
 		{
 		case SDLK_LEFT:		m_flYawVel = 0; break;

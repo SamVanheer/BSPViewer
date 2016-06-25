@@ -46,6 +46,15 @@
     <Filter Include="Source Files\utility">
       <UniqueIdentifier>{2ade4e6a-4327-4850-9b0d-4f6976166def}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\wad">
+      <UniqueIdentifier>{e1980fba-ef0c-4e41-ab9c-ca2191c73bb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\wad">
+      <UniqueIdentifier>{af14f2d6-09c5-41bc-adc5-e4d85726eb26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{5fb1a401-f455-49bb-9b66-b85501ca8617}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Main.cpp">
@@ -88,6 +97,15 @@
       <Filter>Source Files\utility</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gl\GLUtil.cpp">
+      <Filter>Source Files\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wad\WadIO.cpp">
+      <Filter>Source Files\wad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wad\CWadManager.cpp">
+      <Filter>Source Files\wad</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gl\GLMiptex.cpp">
       <Filter>Source Files\gl</Filter>
     </ClCompile>
   </ItemGroup>
@@ -150,6 +168,27 @@
       <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="..\src\gl\GLUtil.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wad\WadConstants.h">
+      <Filter>Header Files\wad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wad\WadFile.h">
+      <Filter>Header Files\wad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wad\WadIO.h">
+      <Filter>Header Files\wad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wad\CWadFile.h">
+      <Filter>Header Files\wad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\wad\CWadManager.h">
+      <Filter>Header Files\wad</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\Platform.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gl\GLMiptex.h">
       <Filter>Header Files\gl</Filter>
     </ClInclude>
   </ItemGroup>

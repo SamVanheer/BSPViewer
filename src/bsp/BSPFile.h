@@ -12,6 +12,8 @@
 
 #include "common/Const.h"
 #include "BSPConstants.h"
+//WadFile contains miptex_t
+#include "wad/WadFile.h"
 
 #include "utility/Mathlib.h"
 
@@ -100,39 +102,6 @@ struct dmiptexlump_t
 	*	This is actually an array of nummiptex size.
 	*/
 	int dataofs[ 4 ];
-};
-
-/**
-*	Represents a single texture.
-*/
-struct miptex_t
-{
-	/**
-	*	Name of this texture.
-	*/
-	char name[ 16 ];
-
-	/**
-	*	Width of this texture.
-	*/
-	unsigned width;
-
-	/**
-	*	Height of this texture.
-	*/
-	unsigned height;
-
-	/**
-	*	Mipmap offset for this texture.
-	*	0 is the actual texture, 1-3 are mipmaps.
-	*	Four mip maps stored.
-	*	Pixels follow this structure.
-	*	Image must be aligned at a 16 pixel boundary.
-	*	Total number of pixels is ( ( width * height ) / 64 ) * 85 (total pixels / ( width * height ) / 64 ) = 85)
-	*	Each mipmap is half as large as the previous.
-	*	/ 1, / 2, / 4, / 8 => / 64
-	*/
-	unsigned offsets[ MIPLEVELS ];
 };
 
 /**
