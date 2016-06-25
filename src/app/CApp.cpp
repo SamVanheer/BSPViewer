@@ -254,17 +254,42 @@ void CApp::Render()
 
 	std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
-	bmodel_t* pModel = &m_Model;
-
-	msurface_t* pSurface = pModel->surfaces;
-
 	size_t uiCount = 0;
 
 	size_t uiTriangles = 0;
 
 	double flTotal = 0;
 
-	for( int iIndex = 0; iIndex < pModel->numsurfaces; ++iIndex, ++pSurface )
+	//TODO: all models should be in the same list.
+	RenderModel( m_Model, uiCount, uiTriangles, flTotal );
+
+	for( int iIndex = 0; iIndex < BSP::mod_numknown; ++iIndex )
+	{
+		RenderModel( BSP::mod_known[ iIndex ], uiCount, uiTriangles, flTotal );
+	}
+
+	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
+
+	printf( "Time spent rendering frame (%u polygons, %u triangles, average (msec): %f): %f\n", uiCount, uiTriangles, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
+
+	m_pLightmapShader->DisableVAA();
+
+	//Unbind program
+	CBaseShader::Unbind();
+
+	check_gl_error();
+
+	//Update screen
+	m_pWindow->SwapGLBuffers();
+
+	check_gl_error();
+}
+
+void CApp::RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, double& flTotal )
+{
+	msurface_t* pSurface = model.surfaces + model.firstmodelsurface;
+
+	for( int iIndex = 0; iIndex < model.nummodelsurfaces; ++iIndex, ++pSurface )
 	{
 		glActiveTexture( GL_TEXTURE0 + 1 );
 
@@ -288,11 +313,9 @@ void CApp::Render()
 
 			check_gl_error();
 
-			//glpoly_t* pPoly2 = pPoly;
 			for( glpoly_t* pPoly2 = pPoly; pPoly2; pPoly2 = pPoly2->next )
 			{
 				std::chrono::milliseconds start = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
-				//glBindVertexArray( pPoly2->VAO );
 
 				glBindBuffer( GL_ARRAY_BUFFER, pPoly2->VBO );
 
@@ -314,20 +337,6 @@ void CApp::Render()
 			}
 		}
 	}
-
-	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
-
-	printf( "Time spent rendering frame (%u polygons, %u triangles, average (msec): %f): %f\n", uiCount, uiTriangles, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
-
-	m_pLightmapShader->DisableVAA();
-
-	//Unbind program
-	CBaseShader::Unbind();
-
-	//Update screen
-	m_pWindow->SwapGLBuffers();
-
-	check_gl_error();
 }
 
 void CApp::Event( const SDL_Event& event )

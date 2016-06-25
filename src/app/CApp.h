@@ -63,6 +63,11 @@ private:
 	*/
 	void Render();
 
+	/**
+	*	Renders a single model.
+	*/
+	void RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, double& flTotal );
+
 	void Event( const SDL_Event& event );
 
 	void KeyEvent( const SDL_KeyboardEvent& event );

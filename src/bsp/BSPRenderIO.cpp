@@ -1321,7 +1321,6 @@ bool R_BuildLightMap( msurface_t *surf, byte *dest, int stride )
 	byte		*lightmap;
 	unsigned	scale;
 	int			maps;
-	int			lightadj[ 4 ];
 	unsigned	*bl;
 
 	//surf->cached_dlight = ( surf->dlightframe == r_framecount );
@@ -1425,7 +1424,7 @@ GL_CreateSurfaceLightmap
 */
 bool GL_CreateSurfaceLightmap( msurface_t *surf )
 {
-	int		smax, tmax, s, t, l, i;
+	int		smax, tmax;
 	byte	*base;
 
 	if( surf->flags & ( SURF_DRAWSKY | SURF_DRAWTURB ) )
@@ -1470,7 +1469,7 @@ void BuildGammaTable( float gamma, float texGamma )
 
 	for( i = 0; i < 256; i++ )
 	{
-		inf = 255 * pow( i / 255.f, g1 );
+		inf = static_cast<int>( 255 * pow( i / 255.f, g1 ) );
 		lightgammatable[ i ] = bound( 0, inf, 255 );
 	}
 
@@ -1719,6 +1718,20 @@ void FreeModel( bmodel_t* pModel )
 {
 	if( !pModel )
 		return;
+
+	size_t uiNumLightmapTex;
+
+	for( uiNumLightmapTex = 0; uiNumLightmapTex < MAX_LIGHTMAPS; ++uiNumLightmapTex )
+	{
+		if( lightmapID[ uiNumLightmapTex ] == 0 )
+			break;
+	}
+
+	if( uiNumLightmapTex )
+	{
+		glDeleteTextures( uiNumLightmapTex, lightmapID );
+		memset( lightmapID, 0, sizeof( lightmapID ) );
+	}
 
 	delete[] pModel->submodels;
 	delete[] pModel->planes;

@@ -17,6 +17,8 @@ namespace BSP
 
 extern bmodel_t mod_known[ MAX_MOD_KNOWN ];
 
+extern int mod_numknown;
+
 extern GLuint lightmapID[ MAX_LIGHTMAPS ];
 
 bool FindWadList( const bmodel_t* pModel, char*& pszWadList );
