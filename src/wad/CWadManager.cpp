@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 
 #include "CWadFile.h"
 #include "WadIO.h"
@@ -85,6 +86,8 @@ CWadManager::AddResult CWadManager::AddWad( const char* const pszWadName )
 		return AddResult::FILE_NOT_FOUND;
 
 	m_WadFiles.emplace_back( std::make_unique<CWadFile>( pszWadName, pWad ) );
+
+	printf( "Using wad file \"%s%s\"\n", pszWadName, WAD_FILE_EXT );
 
 	return AddResult::SUCCESS;
 }

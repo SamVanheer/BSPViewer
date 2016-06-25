@@ -96,6 +96,7 @@
     <ClCompile Include="..\src\gl\CLightMappedGenericShader.cpp" />
     <ClCompile Include="..\src\gl\CPolygonShader.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
+    <ClCompile Include="..\src\gl\CTextureManager.cpp" />
     <ClCompile Include="..\src\gl\GLMiptex.cpp" />
     <ClCompile Include="..\src\gl\GLUtil.cpp" />
     <ClCompile Include="..\src\Main.cpp" />
@@ -121,6 +122,7 @@
     <ClInclude Include="..\src\gl\CLightMappedGenericShader.h" />
     <ClInclude Include="..\src\gl\CPolygonShader.h" />
     <ClInclude Include="..\src\gl\CShaderManager.h" />
+    <ClInclude Include="..\src\gl\CTextureManager.h" />
     <ClInclude Include="..\src\gl\GLMiptex.h" />
     <ClInclude Include="..\src\gl\GLUtil.h" />
     <ClInclude Include="..\src\ui\CWindow.h" />

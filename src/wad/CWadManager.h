@@ -7,6 +7,7 @@
 #include "core/Platform.h"
 
 class CWadFile;
+struct miptex_t;
 
 /**
 *	Manages the list of wads.

@@ -10,6 +10,9 @@
 #include "gl/CShaderManager.h"
 #include "gl/CBaseShader.h"
 
+#include "wad/CWadManager.h"
+#include "gl/CTextureManager.h"
+
 #include "BSPRenderIO.h"
 
 namespace BSP
@@ -117,11 +120,8 @@ Mod_LoadTextures
 */
 bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 {
-	int		i, j, pixels, num, max, altmax;
+	int		j, pixels;
 	miptex_t	*mt;
-	texture_t	*tx, *tx2;
-	texture_t	*anims[ 10 ];
-	texture_t	*altanims[ 10 ];
 
 	byte* mod_base = reinterpret_cast<byte*>( pHeader );
 
@@ -141,7 +141,10 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 
 	memset( pModel->textures, 0, sizeof( texture_t* ) * m->nummiptex );
 
-	for( i = 0; i<m->nummiptex; i++ )
+	if( !g_TextureManager.Initialize( m->nummiptex ) )
+		return false;
+
+	for( int i = 0; i<m->nummiptex; i++ )
 	{
 		m->dataofs[ i ] = LittleValue( m->dataofs[ i ] );
 		if( m->dataofs[ i ] == -1 )
@@ -158,23 +161,10 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 			return false;
 		}
 		pixels = mt->width*mt->height / 64 * 85;
-		tx = reinterpret_cast<texture_t*>( new byte[ sizeof( texture_t ) + pixels ] );
-		pModel->textures[ i ] = tx;
 
-		memcpy( tx->name, mt->name, sizeof( tx->name ) );
-		tx->width = mt->width;
-		tx->height = mt->height;
-
-		//Embedded texture.
-		//TODO: load wad files to get external textures - Solokiller
-		if( mt->offsets[ 0 ] != 0 )
-		{
-			for( j = 0; j<MIPLEVELS; j++ )
-				tx->offsets[ j ] = mt->offsets[ j ] + sizeof( texture_t ) - sizeof( miptex_t );
-			// the pixels immediately follow the structures
-			memcpy( tx + 1, mt + 1, pixels );
-		}
-
+		//Load the texture. Internal or external, doesn't matter.
+		//TODO: the textures array is obsolete now. - Solokiller
+		pModel->textures[ i ] = g_TextureManager.LoadTexture( mt->name, mt->offsets[ 0 ] > 0 ? mt : nullptr );
 
 		/*
 		TODO: fix this - Solokiller
@@ -189,109 +179,13 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		*/
 	}
 
-	//
-	// sequence the animations
-	//
-	for( i = 0; i<m->nummiptex; i++ )
+	//Wads aren't needed anymore now.
+	g_WadManager.Clear();
+
+	if( !g_TextureManager.SetupAnimatingTextures() )
 	{
-		tx = pModel->textures[ i ];
-		if( !tx || tx->name[ 0 ] != '+' )
-			continue;
-		if( tx->anim_next )
-			continue;	// allready sequenced
-
-						// find the number of frames in the animation
-		memset( anims, 0, sizeof( anims ) );
-		memset( altanims, 0, sizeof( altanims ) );
-
-		max = tx->name[ 1 ];
-		altmax = 0;
-		if( max >= 'a' && max <= 'z' )
-			max -= 'a' - 'A';
-		if( max >= '0' && max <= '9' )
-		{
-			max -= '0';
-			altmax = 0;
-			anims[ max ] = tx;
-			max++;
-		}
-		else if( max >= 'A' && max <= 'J' )
-		{
-			altmax = max - 'A';
-			max = 0;
-			altanims[ altmax ] = tx;
-			altmax++;
-		}
-		else
-		{
-			printf( "Bad animating texture %s\n", tx->name );
-			return false;
-		}
-
-		for( j = i + 1; j<m->nummiptex; j++ )
-		{
-			tx2 = pModel->textures[ j ];
-			if( !tx2 || tx2->name[ 0 ] != '+' )
-				continue;
-			if( strcmp( tx2->name + 2, tx->name + 2 ) )
-				continue;
-
-			num = tx2->name[ 1 ];
-			if( num >= 'a' && num <= 'z' )
-				num -= 'a' - 'A';
-			if( num >= '0' && num <= '9' )
-			{
-				num -= '0';
-				anims[ num ] = tx2;
-				if( num + 1 > max )
-					max = num + 1;
-			}
-			else if( num >= 'A' && num <= 'J' )
-			{
-				num = num - 'A';
-				altanims[ num ] = tx2;
-				if( num + 1 > altmax )
-					altmax = num + 1;
-			}
-			else
-			{
-				printf( "Bad animating texture %s\n", tx->name );
-				return false;
-			}
-		}
-
-#define	ANIM_CYCLE	2
-		// link them all together
-		for( j = 0; j<max; j++ )
-		{
-			tx2 = anims[ j ];
-			if( !tx2 )
-			{
-				printf( "Missing frame %i of %s\n", j, tx->name );
-				return false;
-			}
-			tx2->anim_total = max * ANIM_CYCLE;
-			tx2->anim_min = j * ANIM_CYCLE;
-			tx2->anim_max = ( j + 1 ) * ANIM_CYCLE;
-			tx2->anim_next = anims[ ( j + 1 ) % max ];
-			if( altmax )
-				tx2->alternate_anims = altanims[ 0 ];
-		}
-		for( j = 0; j<altmax; j++ )
-		{
-			tx2 = altanims[ j ];
-			if( !tx2 )
-			{
-				printf( "Missing frame %i of %s\n", j, tx->name );
-				return false;
-			}
-			tx2->anim_total = altmax * ANIM_CYCLE;
-			tx2->anim_min = j * ANIM_CYCLE;
-			tx2->anim_max = ( j + 1 ) * ANIM_CYCLE;
-			tx2->anim_next = altanims[ ( j + 1 ) % altmax ];
-			if( max )
-				tx2->alternate_anims = anims[ 0 ];
-		}
+		printf( "Couldn't set up animating textures\n" );
+		return false;
 	}
 
 	return true;
@@ -1193,11 +1087,23 @@ bool FindWadList( const bmodel_t* pModel, char*& pszWadList )
 				COM_Parse( pszNextToken );
 
 				//com_token is the wad path list - Solokiller
-				const size_t uiLength = strlen( com_token );
+				size_t uiLength = strlen( com_token );
+
+				const bool bHasSemiColonEnd = uiLength > 0 ? com_token[ uiLength - 1 ] == ';' : false;
+
+				//Need to append a semicolon at the end so search operations are easier - Solokiller
+				if( !bHasSemiColonEnd )
+					++uiLength;
 
 				pszWadList = new char[ uiLength + 1 ];
 
 				strcpy( pszWadList, com_token );
+
+				if( !bHasSemiColonEnd )
+				{
+					pszWadList[ uiLength - 1 ] = ';';
+					pszWadList[ uiLength ] = '\0';
+				}
 
 				return true;
 			}
@@ -1366,14 +1272,47 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 
 	char* pszWadList = nullptr;
 
-	if( !FindWadList( pModel, pszWadList ) )
+	if( !BSP::FindWadList( pModel, pszWadList ) )
 	{
 		//TODO: is this supposed to be an error? - Solokiller
 		printf( "Couldn't find wad list!\n" );
 		return false;
 	}
 
-	//TODO: load wads - Solokiller
+	{
+		const size_t uiLength = strlen( pszWadList );
+
+		char* pszWad = pszWadList;
+
+		while( pszWad && *pszWad )
+		{
+			char* pszNext = strchr( pszWad + 1, ';' );
+
+			if( !pszNext )
+				break;
+
+			//Null terminate so the next operations succeeds.
+			*pszNext = '\0';
+
+			//TODO: fix slashes.
+			//Strip path.
+			char* pszWadName = strrchr( pszWad, '\\' );
+
+			if( pszWadName )
+				pszWad = pszWadName + 1;
+
+			char* pszExt = strrchr( pszWad, '.' );
+
+			//Null terminate for convenience.
+			if( pszExt )
+				*pszExt = '\0';
+
+			g_WadManager.AddWad( pszWad );
+
+			pszWad = pszNext + 1;
+		}
+	}
+
 	delete[] pszWadList;
 
 	if( !Mod_LoadTextures( pModel, pHeader, &pHeader->lumps[ LUMP_TEXTURES ] ) )
@@ -1533,12 +1472,8 @@ void FreeModel( bmodel_t* pModel )
 	//delete[] pModel->clipnodes;
 	delete[] pModel->marksurfaces;
 
-	texture_t** ppTexture = pModel->textures;
-
-	for( int iIndex = 0; iIndex < pModel->numtextures; ++iIndex, ++ppTexture )
-	{
-		delete *ppTexture;
-	}
+	//The textures themselves are managed by CTextureManager now, so don't delete them here. - Solokiller
+	g_TextureManager.Shutdown();
 
 	delete[] pModel->textures;
 	delete[] pModel->visdata;

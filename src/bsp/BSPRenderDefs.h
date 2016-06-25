@@ -81,9 +81,8 @@ struct texture_t
 
 	/**
 	*	glGenTextures value for this texture.
-	*	TODO: glGenTextures uses GLuint. - Solokiller
 	*/
-	int gl_texturenum;
+	GLuint gl_texturenum;
 
 	/**
 	*	for gl_texsort drawing
@@ -114,12 +113,6 @@ struct texture_t
 	*	bmodels in frame 1 use these
 	*/
 	texture_t* alternate_anims;
-
-	/**
-	*	Offsets to mipmaps.
-	*	four mip maps stored
-	*/
-	unsigned offsets[ MIPLEVELS ];
 };
 
 #define	SURF_PLANEBACK		2

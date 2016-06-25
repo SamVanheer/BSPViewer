@@ -5,6 +5,8 @@
 #include <cstring>
 #include <functional>
 
+#include "core/Platform.h"
+
 /**
 *	String hashing function
 *	Ripped from the MSVC std::hash<std::string> implementation
@@ -69,6 +71,6 @@ struct BaseRawCharEqualTo : public std::binary_function<const char*, const char*
 };
 
 typedef BaseRawCharEqualTo<strcmp> RawCharEqualTo;
-typedef BaseRawCharEqualTo<stricmp> RawCharEqualToI;
+typedef BaseRawCharEqualTo<strcasecmp> RawCharEqualToI;
 
 #endif //COMMON_STRINGUTILS_H

@@ -14,6 +14,8 @@ namespace BSP
 
 extern bmodel_t mod_known[ MAX_MOD_KNOWN ];
 
+bool FindWadList( const bmodel_t* pModel, char*& pszWadList );
+
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader );
 
 void FreeModel( bmodel_t* pModel );

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 
 #include <SDL.h>
 
@@ -41,54 +42,20 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 	{
 		printf( "CApp::Initialize succeeded\n" );
 
-		GLuint tex = 0;
+		g_WadManager.SetBasePath( "external" );
 
 		{
-			//TODO Just a test - Solokiller
-			{
-				g_WadManager.SetBasePath( "external" );
-
-				g_WadManager.AddWad( "halflife" );
-
-				auto pTexture = g_WadManager.FindTextureByName( "POSTER1" );
-
-				if( pTexture )
-				{
-					printf( "Found texture %s\n", pTexture->name );
-
-					tex = UploadMiptex( pTexture );
-				}
-			}
-
 			auto header = LoadBSPFile( "external/boot_camp.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
 			strcpy( m_Model.name, "external/test.bsp" );
 
-			if( BSP::LoadBrushModel( &m_Model, header.get() ) )
+			bSuccess = BSP::LoadBrushModel( &m_Model, header.get() );
+
+			if( bSuccess )
 			{
 				printf( "Loaded BSP\n" );
-
-				if( tex != 0 )
-				{
-					texture_t** pTexture = m_Model.textures;
-
-					for( int iTex = 0; iTex < m_Model.numtextures; ++iTex, ++pTexture )
-					{
-						if( pTexture )
-						{
-							( *pTexture )->gl_texturenum = tex;
-
-							auto pMiptex = g_WadManager.FindTextureByName( ( *pTexture )->name );
-
-							if( pMiptex )
-							{
-								( *pTexture )->gl_texturenum = UploadMiptex( pMiptex );
-							}
-						}
-					}
-				}
 			}
 			else
 			{
@@ -98,9 +65,15 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 
 		check_gl_error();
 
-		m_Camera.RotateYaw( -90.0f );
+		if( bSuccess )
+		{
+			m_Camera.RotateYaw( -90.0f );
 
-		bSuccess = RunApp();
+			printf( "Ready to begin\n" );
+			getchar();
+
+			bSuccess = RunApp();
+		}
 
 		BSP::FreeModel( &m_Model );
 	}
@@ -291,7 +264,7 @@ void CApp::Render()
 
 	auto projection = glm::ortho( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 1.0f, -1.0f );
 
-	projection = glm::perspective( glm::radians( 45.0f ), flAspect, 0.1f, 10000.0f );
+	projection = glm::perspective( glm::radians( 75.0f ), flAspect, 0.1f, 10000.0f );
 
 	glm::mat4x4 view;
 	
@@ -301,33 +274,9 @@ void CApp::Render()
 		-1, 0, 0, 0,
 		0, 0, 0, 1 );
 
-	//m_Camera.SetPosition( glm::vec3( 10, 10, 10 ) );
-
 	view = m_Camera.GetViewMatrix();
 
-	//view = glm::lookAt( glm::vec3( 10, 10, 10 ), glm::vec3( 0, 0, 0 ), glm::vec3( 0, 0, 1 ) );
-
 	glm::mat4x4 model = glm::mat4x4();
-
-	/*
-	//Render quad
-	//Bind program
-	m_pPolygonShader->Bind();
-
-	//Enable vertex position
-	m_pPolygonShader->EnableVAA();
-
-	//Set vertex data
-	glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
-	m_pPolygonShader->SetupParams( projection, view, model );
-
-	//Set index data and render
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_IBO );
-	glDrawElements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, NULL );
-
-	//Disable vertex position
-	m_pPolygonShader->DisableVAA();
-	*/
 
 	m_pLightmapShader->Bind();
 
@@ -361,6 +310,8 @@ void CApp::Render()
 
 	size_t uiCount = 0;
 
+	size_t uiTriangles = 0;
+
 	double flTotal = 0;
 
 	for( int iIndex = 0; iIndex < pModel->numsurfaces; ++iIndex, ++pSurface )
@@ -392,6 +343,8 @@ void CApp::Render()
 
 				++uiCount;
 
+				uiTriangles += pPoly2->numverts - 2;
+
 				std::chrono::milliseconds end = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
 				flTotal += ( end - start ).count();
@@ -401,7 +354,7 @@ void CApp::Render()
 
 	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
-	printf( "Time spent rendering frame (%u polygons, average (msec): %f): %f\n", uiCount, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
+	printf( "Time spent rendering frame (%u polygons, %u triangles, average (msec): %f): %f\n", uiCount, uiTriangles, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
 
 	m_pLightmapShader->DisableVAA();
 
@@ -437,7 +390,6 @@ void CApp::KeyEvent( const SDL_KeyboardEvent& event )
 	switch( event.type )
 	{
 	case SDL_KEYDOWN:
-		printf( "key down\n" );
 		switch( event.keysym.sym )
 		{
 		case SDLK_LEFT:		m_flYawVel = -ROTATE_SPEED; break;
@@ -449,7 +401,6 @@ void CApp::KeyEvent( const SDL_KeyboardEvent& event )
 		break;
 
 	case SDL_KEYUP:
-		printf( "key up\n" );
 		switch( event.keysym.sym )
 		{
 		case SDLK_LEFT:		m_flYawVel = 0; break;
