@@ -10,10 +10,12 @@ void CLightMappedGenericShader::EnableVAA()
 {
 	glEnableVertexAttribArray( m_VertexArrayAttrib );
 	glEnableVertexAttribArray( m_TexCoordAttrib );
+	glEnableVertexAttribArray( m_LightmapCoordAttrib );
 }
 
 void CLightMappedGenericShader::DisableVAA()
 {
+	glDisableVertexAttribArray( m_LightmapCoordAttrib );
 	glDisableVertexAttribArray( m_TexCoordAttrib );
 	glDisableVertexAttribArray( m_VertexArrayAttrib );
 }
@@ -31,6 +33,14 @@ void CLightMappedGenericShader::SetupParams( const glm::mat4x4& projection, cons
 	glUniformMatrix4fv( m_MatModelUniform, 1, GL_FALSE, glm::value_ptr( model ) );
 
 	check_gl_error();
+
+	glUniform1i( m_TexUniform, 0 );
+
+	check_gl_error();
+
+	glUniform1i( m_LightmapUniform, 1 );
+
+	check_gl_error();
 }
 
 void CLightMappedGenericShader::SetupVertexAttribs()
@@ -40,6 +50,10 @@ void CLightMappedGenericShader::SetupVertexAttribs()
 	check_gl_error();
 
 	glVertexAttribPointer( m_TexCoordAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof( GLfloat ), reinterpret_cast<void*>( 3 * sizeof( GLfloat ) ) );
+
+	check_gl_error();
+
+	glVertexAttribPointer( m_LightmapCoordAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof( GLfloat ), reinterpret_cast<void*>( 5 * sizeof( GLfloat ) ) );
 
 	check_gl_error();
 }
@@ -57,6 +71,16 @@ bool CLightMappedGenericShader::OnPostLink()
 	m_MatProjUniform = glGetUniformLocation( GetProgramID(), "matProj" );
 	m_MatViewUniform = glGetUniformLocation( GetProgramID(), "matView" );
 	m_MatModelUniform = glGetUniformLocation( GetProgramID(), "matModel" );
+	m_TexUniform = glGetUniformLocation( GetProgramID(), "tex" );
+	m_LightmapUniform = glGetUniformLocation( GetProgramID(), "lightmap" );
 
-	return m_VertexArrayAttrib != -1 && m_TexCoordAttrib !=-1 /*&& m_LightmapCoordAttrib != -1*/ && m_MatProjUniform != -1 && m_MatViewUniform != -1 && m_MatModelUniform != -1;
+	return 
+		m_VertexArrayAttrib != -1 && 
+		m_TexCoordAttrib !=-1 && 
+		m_LightmapCoordAttrib != -1 && 
+		m_MatProjUniform != -1 && 
+		m_MatViewUniform != -1 && 
+		m_MatModelUniform != -1 &&
+		m_TexUniform != -1 &&
+		m_LightmapUniform != -1;
 }

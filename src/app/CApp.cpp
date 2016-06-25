@@ -118,41 +118,6 @@ bool CApp::RunApp()
 {
 	bool bSuccess = true;
 
-	//VBO data
-	GLfloat vertexData[] =
-	{
-		100, 100,
-		200, 100,
-		200, 200,
-		100, 200
-	};
-
-	//IBO data
-	GLuint indexData[] = { 0, 1, 2, 3 };
-
-	//Create VBO
-	glGenBuffers( 1, &m_VBO );
-	glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
-	//glBufferData( GL_ARRAY_BUFFER, 2 * 4 * sizeof( GLfloat ), vertexData, GL_STATIC_DRAW );
-
-	GLfloat polygon[] = 
-	{
-		-100, -100, 0, 0, 0, 0, 0,
-		-100, 100, 0, 0, 0, 0, 0,
-		100, 100, 0, 0, 0, 0, 0,
-		100, -100, 0, 0, 0, 0, 0,
-		-100, -100, 0, 0, 0, 0, 0
-	};
-
-	glBufferData( GL_ARRAY_BUFFER, sizeof( polygon ), polygon, GL_STATIC_DRAW );
-
-	/*
-	//Create IBO
-	glGenBuffers( 1, &m_IBO );
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_IBO );
-	glBufferData( GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof( GLuint ), indexData, GL_STATIC_DRAW );
-	*/
-
 	//Main loop flag
 	bool quit = false;
 
@@ -224,9 +189,6 @@ bool CApp::RunApp()
 		}
 	}
 
-	glDeleteBuffers( 1, &m_VBO );
-	glDeleteBuffers( 1, &m_IBO );
-
 	return true;
 }
 
@@ -286,19 +248,7 @@ void CApp::Render()
 
 	check_gl_error();
 
-	glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
-
-	check_gl_error();
-
 	m_pLightmapShader->SetupParams( projection, view, model );
-
-	check_gl_error();
-
-	m_pLightmapShader->SetupVertexAttribs();
-
-	check_gl_error();
-
-	glDrawArrays( GL_POLYGON, 0, 5 );
 
 	check_gl_error();
 
@@ -316,6 +266,19 @@ void CApp::Render()
 
 	for( int iIndex = 0; iIndex < pModel->numsurfaces; ++iIndex, ++pSurface )
 	{
+		glActiveTexture( GL_TEXTURE0 + 1 );
+
+		check_gl_error();
+
+		//Skies will have no texture here.
+		glBindTexture( GL_TEXTURE_2D, pSurface->lightmaptexturenum );
+
+		check_gl_error();
+
+		glActiveTexture( GL_TEXTURE0 + 0 );
+
+		check_gl_error();
+
 		for( glpoly_t* pPoly = pSurface->polys; pPoly; pPoly = pPoly->chain )
 		{
 			if( pSurface->texinfo->texture )

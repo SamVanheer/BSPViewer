@@ -35,6 +35,9 @@ private:
 	GLint m_MatProjUniform = -1;
 	GLint m_MatViewUniform = -1;
 	GLint m_MatModelUniform = -1;
+
+	GLint m_TexUniform = -1;
+	GLint m_LightmapUniform = -1;
 };
 
 #endif //GL_CLIGHTMAPPEDGENERICSHADER_H

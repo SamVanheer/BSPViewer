@@ -624,18 +624,20 @@ bool Mod_LoadFaces( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 
 		// set the drawing flags flag
 
-		/*
 		if( !strncmp( out->texinfo->texture->name, "sky", 3 ) )	// sky
 		{
 			out->flags |= ( SURF_DRAWSKY | SURF_DRAWTILED );
+			/*
 #ifndef QUAKE2
 			// cut up polygon for warps
 			if( !GL_SubdivideSurface( pModel, out ) )
 				return false;
 #endif
+*/
 			continue;
 		}
 
+		/*
 		if( !strncmp( out->texinfo->texture->name, "*", 1 ) )		// turbulent
 		{
 			out->flags |= ( SURF_DRAWTURB | SURF_DRAWTILED );
@@ -1236,6 +1238,250 @@ void BuildSurfaceDisplayList( bmodel_t* pModel, msurface_t *fa )
 	CreatePoly( poly );
 }
 
+int			allocated[ MAX_LIGHTMAPS ][ BLOCK_WIDTH ];
+
+// the lightmap texture data needs to be kept in
+// main memory so texsubimage can update properly
+byte		lightmaps[ 4 * MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT ];
+
+int		lightmap_bytes = 4;		// 1, 2, or 4
+
+unsigned		blocklights[ BLOCK_WIDTH*BLOCK_HEIGHT * 3 ];
+
+int		d_lightstylevalue[ 256 ];	// 8.8 fraction of base light value
+
+int		gl_lightmap_format = GL_RGBA;
+
+GLuint lightmapID[ MAX_LIGHTMAPS ];
+
+#define MAX_GAMMA 256
+
+int lightgammatable[ MAX_GAMMA ];
+
+// returns a texture number and the position inside it
+int AllocBlock( int w, int h, int *x, int *y )
+{
+	int		i, j;
+	int		best, best2;
+	int		texnum;
+
+	for( texnum = 0; texnum<MAX_LIGHTMAPS; texnum++ )
+	{
+		best = BLOCK_HEIGHT;
+
+		for( i = 0; i<BLOCK_WIDTH - w; i++ )
+		{
+			best2 = 0;
+
+			for( j = 0; j<w; j++ )
+			{
+				if( allocated[ texnum ][ i + j ] >= best )
+					break;
+				if( allocated[ texnum ][ i + j ] > best2 )
+					best2 = allocated[ texnum ][ i + j ];
+			}
+			if( j == w )
+			{	// this is a valid spot
+				*x = i;
+				*y = best = best2;
+			}
+		}
+
+		if( best + h > BLOCK_HEIGHT )
+			continue;
+
+		for( i = 0; i<w; i++ )
+			allocated[ texnum ][ *x + i ] = best + h;
+
+		if( lightmapID[ texnum ] == 0 )
+		{
+			glGenTextures( 1, &lightmapID[ texnum ] );
+		}
+
+		return texnum;
+	}
+
+	printf( "AllocBlock: full\n" );
+
+	return -1;
+}
+
+/*
+===============
+R_BuildLightMap
+
+Combine and scale multiple lightmaps into the 8.8 format in blocklights
+===============
+*/
+bool R_BuildLightMap( msurface_t *surf, byte *dest, int stride )
+{
+	int			smax, tmax;
+	int			t;
+	int			i, j, size;
+	byte		*lightmap;
+	unsigned	scale;
+	int			maps;
+	int			lightadj[ 4 ];
+	unsigned	*bl;
+
+	//surf->cached_dlight = ( surf->dlightframe == r_framecount );
+
+	int lightscale = ( int ) floor( pow( 2.0, 1.0 / 1.8 ) * 256.0 + 0.5 );
+
+	smax = ( surf->extents[ 0 ] >> 4 ) + 1;
+	tmax = ( surf->extents[ 1 ] >> 4 ) + 1;
+	size = smax*tmax;
+	lightmap = surf->samples;
+
+	// set to full bright if no light data
+	/*
+	if( r_fullbright.value || !cl.worldmodel->lightdata )
+	{
+		for( i = 0; i<size; i++ )
+			blocklights[ i ] = 255 * 256;
+		goto store;
+	}
+	*/
+
+	// clear to no light
+	for( i = 0; i< size * 3; i++ )
+		blocklights[ i ] = 0;
+
+	// add all the lightmaps
+	if( lightmap )
+		for( maps = 0; maps < MAXLIGHTMAPS && surf->styles[ maps ] != 255;
+			 maps++ )
+	{
+		scale = d_lightstylevalue[ surf->styles[ maps ] ];
+		surf->cached_light[ maps ] = scale;	// 8.8 fraction
+		for( i = 0; i<size * 3; i++ )
+		{
+			blocklights[ i ] += lightgammatable[ lightmap[ i ] ] * scale;
+		}
+		lightmap += size;	// skip to next lightmap
+	}
+
+	// add all the dynamic lights
+	/*
+	if( surf->dlightframe == r_framecount )
+		R_AddDynamicLights( surf );
+		*/
+
+	// bound, invert, and shift
+store:
+	switch( gl_lightmap_format )
+	{
+	case GL_RGBA:
+		stride -= ( smax << 2 );
+		bl = blocklights;
+		for( i = 0; i<tmax; i++, dest += stride )
+		{
+			for( j = 0; j<smax; j++ )
+			{
+				for( size_t uiIndex = 0; uiIndex < 3; ++uiIndex )
+				{
+					t = *bl++;
+					t >>= 7;
+					if( t > 255 )
+						t = 255;
+					dest[ uiIndex ] = t;
+				}
+
+				dest[ 3 ] = 255;
+
+				dest += 4;
+			}
+		}
+
+		break;
+	case GL_ALPHA:
+	case GL_LUMINANCE:
+	case GL_INTENSITY:
+		bl = blocklights;
+		for( i = 0; i<tmax; i++, dest += stride )
+		{
+			for( j = 0; j<smax; j++ )
+			{
+				t = *bl++;
+				t >>= 7;
+				if( t > 255 )
+					t = 255;
+				dest[ j ] = 255 - t;
+			}
+		}
+		break;
+	default:
+		printf( "Bad lightmap format" );
+		return false;
+	}
+
+	return true;
+}
+
+/*
+========================
+GL_CreateSurfaceLightmap
+========================
+*/
+bool GL_CreateSurfaceLightmap( msurface_t *surf )
+{
+	int		smax, tmax, s, t, l, i;
+	byte	*base;
+
+	if( surf->flags & ( SURF_DRAWSKY | SURF_DRAWTURB ) )
+	{
+		return true;
+	}
+
+	if( surf->lightmaptexturenum )
+	{
+		//printf( "Surface generating lightmaps multiple times\n" );
+		return true;
+	}
+
+	smax = ( surf->extents[ 0 ] >> 4 ) + 1;
+	tmax = ( surf->extents[ 1 ] >> 4 ) + 1;
+
+	const int iTexture = AllocBlock( smax, tmax, &surf->light_s, &surf->light_t );
+
+	if( iTexture == -1 )
+		return false;
+
+	surf->lightmaptexturenum = lightmapID[ iTexture ];
+
+	base = lightmaps + iTexture*lightmap_bytes*BLOCK_WIDTH*BLOCK_HEIGHT;
+	base += ( surf->light_t * BLOCK_WIDTH + surf->light_s ) * lightmap_bytes;
+	return R_BuildLightMap( surf, base, BLOCK_WIDTH*lightmap_bytes );
+}
+
+#define bound( min, val, max ) ( ( val ) < ( min ) ? ( min ) : ( (val ) > ( max ) ? ( max ) : ( val ) ) )
+
+void BuildGammaTable( float gamma, float texGamma )
+{
+	int	i, inf;
+	float	g1, g = gamma;
+	double	f;
+
+	g = bound( 1.8f, g, 3.0f );
+	texGamma = bound( 1.8f, texGamma, 3.0f );
+
+	g = 1.0f / g;
+	g1 = texGamma * g;
+
+	for( i = 0; i < 256; i++ )
+	{
+		inf = 255 * pow( i / 255.f, g1 );
+		lightgammatable[ i ] = bound( 0, inf, 255 );
+	}
+
+	for( i = 0; i < 256; i++ )
+	{
+		f = 255.0 * pow( ( float ) i / 255.0f, 2.2f / texGamma );
+		inf = ( int ) ( f + 0.5f );
+		lightgammatable[ i ] = bound( 0, inf, 255 );
+	}
+}
+
 bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 {
 	assert( pModel );
@@ -1403,10 +1649,22 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 
 	bmodel_t* pCurrentModel;
 
+	memset( allocated, 0, sizeof( allocated ) );
+	memset( lightmaps, 0, sizeof( lightmaps ) );
+	memset( lightmapID, 0, sizeof( lightmapID ) );
+
+	BuildGammaTable( 1.0f, 2.2f );
+
+	for( size_t uiIndex = 0; uiIndex < 256; ++uiIndex )
+	{
+		d_lightstylevalue[ uiIndex ] = 264;
+	}
+
 	for( int i = 0; i<pModel->numsurfaces; i++ )
 	{
+		if( !GL_CreateSurfaceLightmap( pModel->surfaces + i ) )
+			return false;
 		/*
-		//GL_CreateSurfaceLightmap( m->surfaces + i );
 		if( pModel->surfaces[ i ].flags & SURF_DRAWTURB )
 		continue;
 		#ifndef QUAKE2
@@ -1424,8 +1682,9 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 			break;
 		for( int i = 0; i<pCurrentModel->numsurfaces; i++ )
 		{
+			if( !GL_CreateSurfaceLightmap( pCurrentModel->surfaces + i ) )
+				return false;
 			/*
-			//GL_CreateSurfaceLightmap( m->surfaces + i );
 			if( pCurrentModel->surfaces[ i ].flags & SURF_DRAWTURB )
 				continue;
 #ifndef QUAKE2
@@ -1435,6 +1694,22 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 */
 			BuildSurfaceDisplayList( pCurrentModel, pCurrentModel->surfaces + i );
 		}
+	}
+
+	//
+	// upload all lightmaps that were filled
+	//
+	for( size_t i = 0; i<MAX_LIGHTMAPS; i++ )
+	{
+		if( !allocated[ i ][ 0 ] )
+			break;		// no more used
+		glBindTexture( GL_TEXTURE_2D, lightmapID[ i ] );
+
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA
+					  , BLOCK_WIDTH, BLOCK_HEIGHT, 0,
+					  gl_lightmap_format, GL_UNSIGNED_BYTE, lightmaps + i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes );
 	}
 
 	return true;

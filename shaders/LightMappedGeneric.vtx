@@ -11,10 +11,12 @@ uniform mat4 matView;
 uniform mat4 matModel;
 
 out vec2 outVecTexCoord;
+out vec2 outVecLightmapCoord;
 
 void main()
 {
 	gl_Position = matProj * matView * matModel * vec4( vecPosition, 1 );
 	
 	outVecTexCoord = vecTexCoord;
+	outVecLightmapCoord = vecLightmapCoord;
 }

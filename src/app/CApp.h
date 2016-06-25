@@ -78,9 +78,6 @@ private:
 	CBaseShader* m_pPolygonShader = nullptr;
 	CBaseShader* m_pLightmapShader = nullptr;
 
-	GLuint m_VBO = 0;
-	GLuint m_IBO = 0;
-
 	bmodel_t m_Model;
 
 	CCamera m_Camera;

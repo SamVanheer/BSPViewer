@@ -299,7 +299,7 @@ struct msurface_t
 	/**
 	*	Lightmap texture number for this surface.
 	*/
-	int lightmaptexturenum;
+	GLuint lightmaptexturenum;
 
 	/**
 	*	Light style indices.

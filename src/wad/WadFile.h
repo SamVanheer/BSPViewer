@@ -100,4 +100,12 @@ struct miptex_t
 	unsigned offsets[ MIPLEVELS ];
 };
 
+/**
+*	Calculates the amount of bytes that the given miptex's pixels require.
+*/
+inline size_t GetMiptexPixelSize( const miptex_t& miptex )
+{
+	return ( miptex.width * miptex.height * 85 ) >> 6;
+}
+
 #endif //WAD_WADFILE_H
