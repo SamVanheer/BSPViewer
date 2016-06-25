@@ -1552,7 +1552,11 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 			if( pszExt )
 				*pszExt = '\0';
 
-			g_WadManager.AddWad( pszWad );
+			const auto result = g_WadManager.AddWad( pszWad );
+
+			if( result != CWadManager::AddResult::SUCCESS && 
+				result != CWadManager::AddResult::ALREADY_ADDED )
+				return false;
 
 			pszWad = pszNext + 1;
 		}
