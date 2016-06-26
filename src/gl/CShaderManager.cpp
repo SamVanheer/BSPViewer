@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cstdio>
 
+#include "GLUtil.h"
+
 #include "CBaseShader.h"
 #include "CShaderInstance.h"
 
@@ -57,4 +59,44 @@ bool CShaderManager::AddShader( CBaseShader* pShader )
 	m_Shaders.insert( std::make_pair( pShader->GetName(), pInstance ) );
 
 	return true;
+}
+
+void CShaderManager::ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model )
+{
+	assert( pShader );
+
+	if( !pShader )
+		return;
+
+	if( m_pActiveShader == pShader )
+		return;
+
+	if( m_pActiveShader )
+		DeactivateActiveShader();
+
+	m_pActiveShader = pShader;
+
+	m_pActiveShader->Bind();
+
+	check_gl_error();
+
+	m_pActiveShader->EnableVAA();
+
+	check_gl_error();
+
+	m_pActiveShader->SetupParams( projection, view, model );
+
+	check_gl_error();
+}
+
+void CShaderManager::DeactivateActiveShader()
+{
+	if( !m_pActiveShader )
+		return;
+
+	m_pActiveShader->DisableVAA();
+
+	CShaderInstance::Unbind();
+
+	m_pActiveShader = nullptr;
 }

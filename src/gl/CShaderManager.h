@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <glm/mat4x4.hpp>
+
 #include "common/StringUtils.h"
 
 class CBaseShader;
@@ -23,11 +25,20 @@ public:
 
 	CShaderInstance* GetShader( const char* const pszName );
 
+	CShaderInstance* GetActiveShader() const { return m_pActiveShader; }
+
+	//TODO: the matrices should come from somewhere else.
+	void ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model );
+
+	void DeactivateActiveShader();
+
 private:
 	bool AddShader( CBaseShader* pShader );
 
 private:
 	Shaders_t m_Shaders;
+
+	CShaderInstance* m_pActiveShader = nullptr;
 
 private:
 	CShaderManager( const CShaderManager& ) = delete;

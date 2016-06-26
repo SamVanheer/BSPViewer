@@ -1,0 +1,22 @@
+#version 140
+
+in vec3 vecPosition;
+
+in vec2 vecTexCoord;
+
+in vec2 vecLightmapCoord;
+
+uniform mat4 matProj;
+uniform mat4 matView;
+uniform mat4 matModel;
+
+out vec2 outVecTexCoord;
+out vec2 outVecLightmapCoord;
+
+void main()
+{
+	gl_Position = matProj * matView * matModel * vec4( vecPosition, 1 );
+	
+	outVecTexCoord = vecTexCoord;
+	outVecLightmapCoord = vecLightmapCoord;
+}

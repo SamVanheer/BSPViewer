@@ -45,7 +45,7 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 		g_WadManager.SetBasePath( "external" );
 
 		{
-			auto header = LoadBSPFile( "external/boot_camp.bsp" );
+			auto header = LoadBSPFile( "external/datacore.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
@@ -77,6 +77,9 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 
 		BSP::FreeModel( &m_Model );
 	}
+
+	//Fetch any remaining errors.
+	check_gl_error();
 
 	Shutdown();
 
@@ -240,18 +243,6 @@ void CApp::Render()
 
 	glm::mat4x4 model = glm::mat4x4();
 
-	m_pLightmapShader->Bind();
-
-	check_gl_error();
-
-	m_pLightmapShader->EnableVAA();
-
-	check_gl_error();
-
-	m_pLightmapShader->SetupParams( projection, view, model );
-
-	check_gl_error();
-
 	std::chrono::milliseconds now = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
 	size_t uiCount = 0;
@@ -261,21 +252,19 @@ void CApp::Render()
 	double flTotal = 0;
 
 	//TODO: all models should be in the same list.
-	RenderModel( m_Model, uiCount, uiTriangles, flTotal );
+	RenderModel( projection, view, model, m_Model, uiCount, uiTriangles, flTotal );
 
 	for( int iIndex = 0; iIndex < BSP::mod_numknown; ++iIndex )
 	{
-		RenderModel( BSP::mod_known[ iIndex ], uiCount, uiTriangles, flTotal );
+		RenderModel( projection, view, model, BSP::mod_known[ iIndex ], uiCount, uiTriangles, flTotal );
 	}
 
 	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
 	printf( "Time spent rendering frame (%u polygons, %u triangles, average (msec): %f): %f\n", uiCount, uiTriangles, flTotal / uiCount, ( now2 - now ).count() / 1000.0f );
 
-	m_pLightmapShader->DisableVAA();
-
 	//Unbind program
-	CShaderInstance::Unbind();
+	g_ShaderManager.DeactivateActiveShader();
 
 	check_gl_error();
 
@@ -285,16 +274,22 @@ void CApp::Render()
 	check_gl_error();
 }
 
-void CApp::RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, double& flTotal )
+void CApp::RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, bmodel_t& brushModel, size_t& uiCount, size_t& uiTriangles, double& flTotal )
 {
-	msurface_t* pSurface = model.surfaces + model.firstmodelsurface;
+	msurface_t* pSurface = brushModel.surfaces + brushModel.firstmodelsurface;
 
-	for( int iIndex = 0; iIndex < model.nummodelsurfaces; ++iIndex, ++pSurface )
+	CShaderInstance* pShader = m_pLightmapShader;
+
+	for( int iIndex = 0; iIndex < brushModel.nummodelsurfaces; ++iIndex, ++pSurface )
 	{
 		//Sky, origin, aaatrigger, etc. Don't draw these.
 		//TODO: add option to draw them.
 		if( pSurface->texinfo->flags & TEX_SPECIAL )
 			continue;
+
+		pShader = pSurface->texinfo->texture->pShader;
+
+		g_ShaderManager.ActivateShader( pShader, projection, view, model );
 
 		glActiveTexture( GL_TEXTURE0 + 1 );
 
@@ -324,7 +319,7 @@ void CApp::RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, d
 
 				glBindBuffer( GL_ARRAY_BUFFER, pPoly2->VBO );
 
-				m_pLightmapShader->SetupVertexAttribs();
+				pShader->SetupVertexAttribs();
 
 				check_gl_error();
 

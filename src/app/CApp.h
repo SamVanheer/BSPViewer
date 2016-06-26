@@ -66,7 +66,7 @@ private:
 	/**
 	*	Renders a single model.
 	*/
-	void RenderModel( bmodel_t& model, size_t& uiCount, size_t& uiTriangles, double& flTotal );
+	void RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, bmodel_t& brushModel, size_t& uiCount, size_t& uiTriangles, double& flTotal );
 
 	void Event( const SDL_Event& event );
 

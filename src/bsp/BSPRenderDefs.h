@@ -58,6 +58,8 @@ struct mplane_t
 	byte pad[ 2 ];
 };
 
+class CShaderInstance;
+
 /**
 *	Represents a single texture.
 */
@@ -113,6 +115,8 @@ struct texture_t
 	*	bmodels in frame 1 use these
 	*/
 	texture_t* alternate_anims;
+
+	CShaderInstance* pShader;
 };
 
 #define	SURF_PLANEBACK		2

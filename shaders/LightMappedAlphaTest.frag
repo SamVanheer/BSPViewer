@@ -12,5 +12,12 @@ void main()
 {
 	vec4 texColor = texture( tex, outVecTexCoord );
 	
-	outColor = texColor * texture( lightmap, outVecLightmapCoord );
+	if( texColor.a > 0.5 )
+	{
+		outColor = texColor * texture( lightmap, outVecLightmapCoord );
+	}
+	else
+	{
+		discard;
+	}
 }

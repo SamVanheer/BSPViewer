@@ -6,6 +6,8 @@
 
 #include "GLMiptex.h"
 
+#include "CShaderManager.h"
+
 #include "CTextureManager.h"
 
 CTextureManager g_TextureManager;
@@ -124,6 +126,13 @@ texture_t* CTextureManager::LoadTexture( const char* const pszName, const miptex
 	pTexture->height = pMiptex->height;
 
 	pTexture->gl_texturenum = tex;
+
+	const char* pszShaderName = "LightMappedGeneric";
+
+	if( pszName[ 0 ] == '{' )
+		pszShaderName = "LightMappedAlphaTest";
+
+	pTexture->pShader = g_ShaderManager.GetShader( pszShaderName );
 
 	auto result = m_TexMap.insert( std::make_pair( pTexture->name, uiIndex ) );
 

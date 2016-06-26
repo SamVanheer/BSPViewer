@@ -1,7 +1,3 @@
-#include <glm/gtc/type_ptr.hpp>
-
-#include "GLUtil.h"
-
 #include "CBaseShader.h"
 
 /**
