@@ -69,9 +69,6 @@
     <ClCompile Include="..\src\gl\CBaseShader.cpp">
       <Filter>Source Files\gl</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\gl\CPolygonShader.cpp">
-      <Filter>Source Files\gl</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\app\CApp.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
@@ -89,9 +86,6 @@
     </ClCompile>
     <ClCompile Include="..\src\utility\Tokenization.cpp">
       <Filter>Source Files\utility</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\gl\CLightMappedGenericShader.cpp">
-      <Filter>Source Files\gl</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utility\CCamera.cpp">
       <Filter>Source Files\utility</Filter>
@@ -112,6 +106,12 @@
       <Filter>Source Files\gl</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gl\CShaderInstance.cpp">
+      <Filter>Source Files\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gl\LightMappedGeneric.cpp">
+      <Filter>Source Files\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gl\Polygon.cpp">
       <Filter>Source Files\gl</Filter>
     </ClCompile>
   </ItemGroup>
