@@ -1,6 +1,8 @@
 #ifndef GL_CBASESHADER_H
 #define GL_CBASESHADER_H
 
+#include <vector>
+
 #include <gl/glew.h>
 
 #include <glm/mat4x4.hpp>
@@ -10,21 +12,198 @@
 #define SHADER_FRAG_EXT ".frag"
 
 /**
+*	Attribute types.
+*	This must be kept in sync with the sizes list.
+*/
+enum class AttributeType
+{
+	INTEGER,
+	FLOAT,
+	VEC2,
+	VEC3,
+	VEC4,
+	MAT4X4,
+
+	/**
+	*	A sampler texture.
+	*/
+	SAMPLER_TEXTURE,
+
+	NUM_TYPES
+};
+
+/**
+*	Represents a single attribute.
+*/
+class CBaseShaderAttribute
+{
+public:
+	static const size_t INVALID_INDEX = -1;
+
+public:
+	CBaseShaderAttribute( const char* const pszName, const AttributeType type, const bool bIsVarying )
+		: m_pszName( pszName )
+		, m_Type( type )
+		, m_bIsVarying( bIsVarying )
+	{
+	}
+
+	const char* GetName() const { return m_pszName; }
+
+	AttributeType GetType() const { return m_Type; }
+
+	/**
+	*	@return Whether this attribute is varying (true) or uniform (false).
+	*/
+	bool IsVarying() const { return m_bIsVarying; }
+
+	size_t GetIndex() const { return m_uiIndex; }
+
+private:
+	/**
+	*	Name of the attribute as defined in the shader.
+	*/
+	const char* const m_pszName;
+	const AttributeType m_Type;
+
+	const bool m_bIsVarying;
+
+protected:
+	size_t m_uiIndex = INVALID_INDEX;
+};
+
+class CBaseShaderOutput
+{
+public:
+	CBaseShaderOutput( const char* const pszName )
+		: m_pszName( pszName )
+	{
+	}
+
+	const char* GetName() const { return m_pszName; }
+
+private:
+	const char* const m_pszName;
+};
+
+#define BEGIN_SHADER( shaderName )											\
+namespace shaderName														\
+{																			\
+	static const char* const g_pszName = #shaderName;						\
+	class CShaderAttribute;													\
+																			\
+	static std::vector<CShaderAttribute*> g_Attributes;						\
+																			\
+	class CShaderAttribute final : public CBaseShaderAttribute				\
+	{																		\
+	public:																	\
+		CShaderAttribute( 													\
+			const char* const pszName, const AttributeType type )			\
+			: CBaseShaderAttribute( pszName, type, true )					\
+		{																	\
+			m_uiIndex = g_Attributes.size();								\
+																			\
+			g_Attributes.push_back( this );									\
+		}																	\
+	};																		\
+																			\
+	class CShaderUniform;													\
+																			\
+	static std::vector<CShaderUniform*> g_Uniforms;							\
+																			\
+	class CShaderUniform final : public CBaseShaderAttribute				\
+	{																		\
+	public:																	\
+		CShaderUniform( 													\
+			const char* const pszName, const AttributeType type )			\
+			: CBaseShaderAttribute( pszName, type, false )					\
+		{																	\
+			m_uiIndex = g_Uniforms.size();									\
+																			\
+			g_Uniforms.push_back( this );									\
+		}																	\
+	};																		\
+																			\
+	class CShaderOutput;													\
+																			\
+	static std::vector<CShaderOutput*> g_Outputs;							\
+																			\
+	class CShaderOutput final : public CBaseShaderOutput					\
+	{																		\
+	public:																	\
+		CShaderOutput( const char* const pszName )							\
+			: CBaseShaderOutput( pszName )									\
+		{																	\
+			g_Outputs.push_back( this );									\
+		}																	\
+	};
+
+#define END_SHADER()		\
+	} g_Instance;			\
+}
+
+#define SHADER_ATTRIB( name, type ) static CShaderAttribute name( #name, AttributeType::type );
+
+#define SHADER_UNIFORM( name, type ) static CShaderUniform name( #name, AttributeType::type );
+
+#define SHADER_OUTPUT( name ) static CShaderOutput name( #name );
+
+#define BEGIN_SHADER_ATTRIBS()
+
+#define END_SHADER_ATTRIBS() BEGIN_SHADER_CLASS()
+
+#define BEGIN_SHADER_CLASS()													\
+class CShader : public CBaseShader												\
+{																				\
+public:																			\
+																				\
+	CShader()																	\
+		: CBaseShader()															\
+	{																			\
+	}																			\
+																				\
+	const char* GetName() const override										\
+	{																			\
+		return g_pszName;														\
+	}																			\
+																				\
+	size_t GetNumAttributes() const override									\
+	{																			\
+		return g_Attributes.size();												\
+	}																			\
+																				\
+	CBaseShaderAttribute* GetAttribute( const size_t uiIndex ) const override	\
+	{																			\
+		return g_Attributes[ uiIndex ];											\
+	}																			\
+																				\
+	size_t GetNumUniforms() const override										\
+	{																			\
+		return g_Uniforms.size();												\
+	}																			\
+																				\
+	CBaseShaderAttribute* GetUniform( const size_t uiIndex ) const override		\
+	{																			\
+		return g_Uniforms[ uiIndex ];											\
+	}																			\
+																				\
+	size_t GetNumOutputs() const override										\
+	{																			\
+		return g_Outputs.size();												\
+	}																			\
+																				\
+	CBaseShaderOutput* GetOutput( const size_t uiIndex ) const override			\
+	{																			\
+		return g_Outputs[ uiIndex ];											\
+	}
+
+/**
 *	Base class for shaders.
 */
 class CBaseShader
 {
 public:
-	/**
-	*	Constructor.
-	*	@param pszName Name of the shader. Also the name of the shader files.
-	*/
-	CBaseShader( const char* const pszName );
-
-	/**
-	*	Destructor.
-	*/
-	~CBaseShader();
+	CBaseShader();
 
 	/**
 	*	@return First shader in the global list.
@@ -36,112 +215,20 @@ public:
 	*/
 	CBaseShader* GetNext() const { return m_pNext; }
 
-	/**
-	*	@return Name of this shader.
-	*/
-	const char* GetName() const { return m_pszName; }
+	virtual const char* GetName() const = 0;
 
-	/**
-	*	@return This shader's program ID.
-	*/
-	GLuint GetProgramID() const { return m_Program; }
+	virtual size_t GetNumAttributes() const = 0;
+	virtual CBaseShaderAttribute* GetAttribute( const size_t uiIndex ) const = 0;
 
-	/**
-	*	@return Whether this shader is valid.
-	*/
-	bool IsValid() const { return m_Program != 0; }
+	virtual size_t GetNumUniforms() const = 0;
+	virtual CBaseShaderAttribute* GetUniform( const size_t uiIndex ) const = 0;
 
-	/**
-	*	Loads this shader.
-	*/
-	bool Load();
-
-	/**
-	*	Binds this shader.
-	*/
-	void Bind();
-
-	/**
-	*	Unbinds the current shader.
-	*/
-	static void Unbind();
-
-	/**
-	*	Enable Vertex Attribute Arrays.
-	*/
-	virtual void EnableVAA() {}
-
-	/**
-	*	Disable Vertex Attribute Arrays.
-	*/
-	virtual void DisableVAA() {}
-
-	/**
-	*	Set up parameters for drawing.
-	*/
-	virtual void SetupParams( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model ) {}
-
-	/**
-	*	Set up vertex attributes for drawing.
-	*/
-	virtual void SetupVertexAttribs() {}
-
-protected:
-	/**
-	*	Called after compilation, before linking.
-	*/
-	virtual void OnPreLink() {}
-
-	/**
-	*	Called after linking has succeeded.
-	*	@return true if the shader is valid, false otherwise.
-	*/
-	virtual bool OnPostLink() { return true; }
-
-private:
-	/**
-	*	Loads the given shader and initializes this shader.
-	*/
-	bool Load( const char* const pszName );
-
-	/**
-	*	Loads a shader file.
-	*	@param pszName Shader name.
-	*	@param pszExt File extension.
-	*/
-	static char* LoadShaderFile( const char* const pszName, const char* const pszExt );
-
-	/**
-	*	Creates a shader object.
-	*	@param pszName Shader name.
-	*	@param pszSource Shader source code.
-	*	@param type Shader type.
-	*	@param[ out ] shader Contains the shader ID if the operation was successful.
-	*	@return true on success, false otherwise.
-	*/
-	static bool CreateShader( const char* const pszName, const char* const pszSource, const GLenum type, GLuint& shader );
-
-	/**
-	*	Prints the shader compilation log for the given shader.
-	*/
-	static void PrintShaderLog( GLuint shader );
-
-	/**
-	*	Prints the program linking log for the given program.
-	*/
-	static void PrintProgramLog( GLuint program );
+	virtual size_t GetNumOutputs() const = 0;
+	virtual CBaseShaderOutput* GetOutput( const size_t uiIndex ) const = 0;
 
 private:
 	static CBaseShader* m_pHead;
 	CBaseShader* m_pNext;
-
-	const char* const m_pszName;
-
-	GLuint m_Program = 0;
-
-private:
-	CBaseShader( const CBaseShader& ) = delete;
-	CBaseShader& operator=( const CBaseShader& ) = delete;
 };
 
 #endif //GL_CBASESHADER_H

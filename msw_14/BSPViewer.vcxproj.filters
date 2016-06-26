@@ -111,6 +111,9 @@
     <ClCompile Include="..\src\gl\CTextureManager.cpp">
       <Filter>Source Files\gl</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\gl\CShaderInstance.cpp">
+      <Filter>Source Files\gl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ui\CWindow.h">
@@ -123,9 +126,6 @@
       <Filter>Header Files\ui</Filter>
     </ClInclude>
     <ClInclude Include="..\src\gl\CBaseShader.h">
-      <Filter>Header Files\gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\gl\CPolygonShader.h">
       <Filter>Header Files\gl</Filter>
     </ClInclude>
     <ClInclude Include="..\src\app\CApp.h">
@@ -164,9 +164,6 @@
     <ClInclude Include="..\src\utility\Tokenization.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\gl\CLightMappedGenericShader.h">
-      <Filter>Header Files\gl</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\utility\CCamera.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
@@ -195,6 +192,9 @@
       <Filter>Header Files\gl</Filter>
     </ClInclude>
     <ClInclude Include="..\src\gl\CTextureManager.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gl\CShaderInstance.h">
       <Filter>Header Files\gl</Filter>
     </ClInclude>
   </ItemGroup>

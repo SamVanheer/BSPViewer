@@ -95,6 +95,7 @@
     <ClCompile Include="..\src\gl\CBaseShader.cpp" />
     <ClCompile Include="..\src\gl\CLightMappedGenericShader.cpp" />
     <ClCompile Include="..\src\gl\CPolygonShader.cpp" />
+    <ClCompile Include="..\src\gl\CShaderInstance.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
     <ClCompile Include="..\src\gl\CTextureManager.cpp" />
     <ClCompile Include="..\src\gl\GLMiptex.cpp" />
@@ -119,8 +120,7 @@
     <ClInclude Include="..\src\common\StringUtils.h" />
     <ClInclude Include="..\src\core\Platform.h" />
     <ClInclude Include="..\src\gl\CBaseShader.h" />
-    <ClInclude Include="..\src\gl\CLightMappedGenericShader.h" />
-    <ClInclude Include="..\src\gl\CPolygonShader.h" />
+    <ClInclude Include="..\src\gl\CShaderInstance.h" />
     <ClInclude Include="..\src\gl\CShaderManager.h" />
     <ClInclude Include="..\src\gl\CTextureManager.h" />
     <ClInclude Include="..\src\gl\GLMiptex.h" />

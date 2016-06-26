@@ -2,85 +2,23 @@
 
 #include "GLUtil.h"
 
-#include "CLightMappedGenericShader.h"
+#include "CBaseShader.h"
 
-static CLightMappedGenericShader g_LightMappedGeneircShader( "LightMappedGeneric" );
+/**
+*	Draws a lightmapped polygon.
+*/
+BEGIN_SHADER( LightMappedGeneric )
 
-void CLightMappedGenericShader::EnableVAA()
-{
-	glEnableVertexAttribArray( m_VertexArrayAttrib );
-	glEnableVertexAttribArray( m_TexCoordAttrib );
-	glEnableVertexAttribArray( m_LightmapCoordAttrib );
-}
+	BEGIN_SHADER_ATTRIBS()
+		SHADER_ATTRIB( vecPosition, VEC3 )
+		SHADER_ATTRIB( vecTexCoord, VEC2 )
+		SHADER_ATTRIB( vecLightmapCoord, VEC2 )
 
-void CLightMappedGenericShader::DisableVAA()
-{
-	glDisableVertexAttribArray( m_LightmapCoordAttrib );
-	glDisableVertexAttribArray( m_TexCoordAttrib );
-	glDisableVertexAttribArray( m_VertexArrayAttrib );
-}
+		SHADER_UNIFORM( tex, SAMPLER_TEXTURE )
+		SHADER_UNIFORM( lightmap, SAMPLER_TEXTURE )
 
-void CLightMappedGenericShader::SetupParams( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model )
-{
-	glUniformMatrix4fv( GetMatProjUniform(), 1, GL_FALSE, glm::value_ptr( projection ) );
+		SHADER_OUTPUT( outColor )
 
-	check_gl_error();
+	END_SHADER_ATTRIBS()
 
-	glUniformMatrix4fv( m_MatViewUniform, 1, GL_FALSE, glm::value_ptr( view ) );
-
-	check_gl_error();
-
-	glUniformMatrix4fv( m_MatModelUniform, 1, GL_FALSE, glm::value_ptr( model ) );
-
-	check_gl_error();
-
-	glUniform1i( m_TexUniform, 0 );
-
-	check_gl_error();
-
-	glUniform1i( m_LightmapUniform, 1 );
-
-	check_gl_error();
-}
-
-void CLightMappedGenericShader::SetupVertexAttribs()
-{
-	glVertexAttribPointer( GetVertexArrayAttrib(), 3, GL_FLOAT, GL_FALSE, 7 * sizeof( GLfloat ), NULL );
-
-	check_gl_error();
-
-	glVertexAttribPointer( m_TexCoordAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof( GLfloat ), reinterpret_cast<void*>( 3 * sizeof( GLfloat ) ) );
-
-	check_gl_error();
-
-	glVertexAttribPointer( m_LightmapCoordAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof( GLfloat ), reinterpret_cast<void*>( 5 * sizeof( GLfloat ) ) );
-
-	check_gl_error();
-}
-
-void CLightMappedGenericShader::OnPreLink()
-{
-	glBindFragDataLocation( GetProgramID(), 0, "outColor" );
-}
-
-bool CLightMappedGenericShader::OnPostLink()
-{
-	m_VertexArrayAttrib = glGetAttribLocation( GetProgramID(), "vecPosition" );
-	m_TexCoordAttrib = glGetAttribLocation( GetProgramID(), "vecTexCoord" );
-	m_LightmapCoordAttrib = glGetAttribLocation( GetProgramID(), "vecLightmapCoord" );
-	m_MatProjUniform = glGetUniformLocation( GetProgramID(), "matProj" );
-	m_MatViewUniform = glGetUniformLocation( GetProgramID(), "matView" );
-	m_MatModelUniform = glGetUniformLocation( GetProgramID(), "matModel" );
-	m_TexUniform = glGetUniformLocation( GetProgramID(), "tex" );
-	m_LightmapUniform = glGetUniformLocation( GetProgramID(), "lightmap" );
-
-	return 
-		m_VertexArrayAttrib != -1 && 
-		m_TexCoordAttrib !=-1 && 
-		m_LightmapCoordAttrib != -1 && 
-		m_MatProjUniform != -1 && 
-		m_MatViewUniform != -1 && 
-		m_MatModelUniform != -1 &&
-		m_TexUniform != -1 &&
-		m_LightmapUniform != -1;
-}
+END_SHADER()

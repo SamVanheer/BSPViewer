@@ -7,11 +7,13 @@
 #include "common/StringUtils.h"
 
 class CBaseShader;
+class CShaderInstance;
 
 class CShaderManager final
 {
 private:
-	typedef std::unordered_map<const char*, CBaseShader*, RawCharHash, RawCharEqualTo> Shaders_t;
+
+	typedef std::unordered_map<const char*, CShaderInstance*, RawCharHash, RawCharEqualTo> Shaders_t;
 
 public:
 	CShaderManager() = default;
@@ -19,7 +21,7 @@ public:
 
 	bool LoadShaders();
 
-	CBaseShader* GetShader( const char* const pszName );
+	CShaderInstance* GetShader( const char* const pszName );
 
 private:
 	bool AddShader( CBaseShader* pShader );

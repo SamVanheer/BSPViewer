@@ -16,7 +16,7 @@
 
 #include "gl/CShaderManager.h"
 
-#include "gl/CBaseShader.h"
+#include "gl/CShaderInstance.h"
 
 #include "gl/GLUtil.h"
 
@@ -45,7 +45,7 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 		g_WadManager.SetBasePath( "external" );
 
 		{
-			auto header = LoadBSPFile( "external/c2a5.bsp" );
+			auto header = LoadBSPFile( "external/boot_camp.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
@@ -275,7 +275,7 @@ void CApp::Render()
 	m_pLightmapShader->DisableVAA();
 
 	//Unbind program
-	CBaseShader::Unbind();
+	CShaderInstance::Unbind();
 
 	check_gl_error();
 

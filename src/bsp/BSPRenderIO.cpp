@@ -9,6 +9,7 @@
 
 #include "gl/CShaderManager.h"
 #include "gl/CBaseShader.h"
+#include "gl/CShaderInstance.h"
 
 #include "wad/CWadManager.h"
 #include "gl/CTextureManager.h"
@@ -425,7 +426,8 @@ void CreatePoly( glpoly_t* pPoly )
 
 	glBufferData( GL_ARRAY_BUFFER, pPoly->numverts * VERTEXSIZE * sizeof( GLfloat ), pPoly->verts, GL_STATIC_DRAW );
 
-	g_ShaderManager.GetShader( "LightMappedGeneric" )->SetupVertexAttribs();
+	//TODO: Needed for VAO
+	//g_ShaderManager.GetShader( "LightMappedGeneric" )->SetupVertexAttribs();
 
 	/*
 	++g_uiPolyCount;

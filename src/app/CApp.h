@@ -12,7 +12,7 @@
 #include "utility/CCamera.h"
 
 class CWindow;
-class CBaseShader;
+class CShaderInstance;
 
 /**
 *	App class.
@@ -80,8 +80,8 @@ private:
 
 private:
 	CWindow* m_pWindow = nullptr;
-	CBaseShader* m_pPolygonShader = nullptr;
-	CBaseShader* m_pLightmapShader = nullptr;
+	CShaderInstance* m_pPolygonShader = nullptr;
+	CShaderInstance* m_pLightmapShader = nullptr;
 
 	bmodel_t m_Model;
 

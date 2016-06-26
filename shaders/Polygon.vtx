@@ -1,9 +1,12 @@
 #version 140
 
 in vec2 LVertexPos2D;
+
 uniform mat4 matProj;
+uniform mat4 matView;
+uniform mat4 matModel;
 
 void main()
 {
-	gl_Position = matProj * vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 );
+	gl_Position = matProj * matView * matModel * vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 );
 }

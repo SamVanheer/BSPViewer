@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "CBaseShader.h"
+#include "CShaderInstance.h"
 
 #include "CShaderManager.h"
 
@@ -18,7 +19,7 @@ bool CShaderManager::LoadShaders()
 	return true;
 }
 
-CBaseShader* CShaderManager::GetShader( const char* const pszName )
+CShaderInstance* CShaderManager::GetShader( const char* const pszName )
 {
 	assert( pszName );
 
@@ -42,13 +43,18 @@ bool CShaderManager::AddShader( CBaseShader* pShader )
 		return false;
 	}
 
-	if( !pShader->Load() )
+	CShaderInstance* pInstance = new CShaderInstance();
+
+	if( !pInstance->Initialize( pShader ) )
 	{
 		printf( "CShaderManager::AddShader: Shader \"%s\" failed to load!\n", pShader->GetName() );
+
+		delete pInstance;
+
 		return false;
 	}
 
-	m_Shaders.insert( std::make_pair( pShader->GetName(), pShader ) );
+	m_Shaders.insert( std::make_pair( pShader->GetName(), pInstance ) );
 
 	return true;
 }
