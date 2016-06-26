@@ -100,6 +100,7 @@
     <ClCompile Include="..\src\gl\GLUtil.cpp" />
     <ClCompile Include="..\src\gl\LightMappedAlphaTest.cpp" />
     <ClCompile Include="..\src\gl\LightMappedGeneric.cpp" />
+    <ClCompile Include="..\src\gl\LightMappedWater.cpp" />
     <ClCompile Include="..\src\gl\Polygon.cpp" />
     <ClCompile Include="..\src\Main.cpp" />
     <ClCompile Include="..\src\ui\CWindow.cpp" />

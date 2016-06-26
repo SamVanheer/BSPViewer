@@ -45,7 +45,7 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 		g_WadManager.SetBasePath( "external" );
 
 		{
-			auto header = LoadBSPFile( "external/datacore.bsp" );
+			auto header = LoadBSPFile( "external/c2a5.bsp" );
 
 			memset( &m_Model, 0, sizeof( bmodel_t ) );
 
@@ -319,13 +319,13 @@ void CApp::RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, 
 
 				glBindBuffer( GL_ARRAY_BUFFER, pPoly2->VBO );
 
+				check_gl_error();
+
 				pShader->SetupVertexAttribs();
 
 				check_gl_error();
 
-				glDrawArrays( GL_POLYGON, 0, pPoly2->numverts );
-
-				check_gl_error();
+				pShader->Draw( pPoly2->numverts );
 
 				++uiCount;
 

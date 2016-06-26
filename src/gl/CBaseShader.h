@@ -7,6 +7,8 @@
 
 #include <glm/mat4x4.hpp>
 
+#include "GLUtil.h"
+
 #define SHADER_BASE_DIR "shaders/"
 #define SHADER_VERTEX_EXT ".vtx"
 #define SHADER_FRAG_EXT ".frag"
@@ -58,6 +60,8 @@ public:
 	bool IsVarying() const { return m_bIsVarying; }
 
 	size_t GetIndex() const { return m_uiIndex; }
+
+	operator size_t() const { return m_uiIndex; }
 
 private:
 	/**
@@ -197,6 +201,12 @@ public:																			\
 		return g_Outputs[ uiIndex ];											\
 	}
 
+#define SHADER_ACTIVATE void Activate( CShaderInstance* pInstance ) override
+
+#define SHADER_DRAW void OnDraw( CShaderInstance* pInstance, const size_t uiNumVerts ) override
+
+class CShaderInstance;
+
 /**
 *	Base class for shaders.
 */
@@ -225,6 +235,10 @@ public:
 
 	virtual size_t GetNumOutputs() const = 0;
 	virtual CBaseShaderOutput* GetOutput( const size_t uiIndex ) const = 0;
+
+	virtual void Activate( CShaderInstance* pInstance ) {}
+
+	virtual void OnDraw( CShaderInstance* pInstance, const size_t uiNumVerts ) = 0;
 
 private:
 	static CBaseShader* m_pHead;

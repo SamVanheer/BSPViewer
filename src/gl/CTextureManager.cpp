@@ -131,8 +131,16 @@ texture_t* CTextureManager::LoadTexture( const char* const pszName, const miptex
 
 	if( pszName[ 0 ] == '{' )
 		pszShaderName = "LightMappedAlphaTest";
+	else if( pszName[ 0 ] == '!' )
+		pszShaderName = "LightMappedWater";
 
 	pTexture->pShader = g_ShaderManager.GetShader( pszShaderName );
+
+	if( !pTexture->pShader )
+	{
+		printf( "Shader \"%s\" not found, falling back to generic\n", pszName );
+		pTexture->pShader = g_ShaderManager.GetShader( "LightMappedGeneric" );
+	}
 
 	auto result = m_TexMap.insert( std::make_pair( pTexture->name, uiIndex ) );
 

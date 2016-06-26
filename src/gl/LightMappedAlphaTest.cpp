@@ -17,4 +17,11 @@ SHADER_OUTPUT( outColor )
 
 END_SHADER_ATTRIBS()
 
+	SHADER_DRAW
+	{
+		glDrawArrays( GL_POLYGON, 0, uiNumVerts );
+
+		check_gl_error();
+	}
+
 END_SHADER()

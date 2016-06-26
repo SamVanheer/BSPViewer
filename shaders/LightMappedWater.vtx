@@ -1,0 +1,30 @@
+#version 140
+
+in vec3 vecPosition;
+
+in vec2 vecTexCoord;
+
+in vec2 vecLightmapCoord;
+
+uniform mat4 matProj;
+uniform mat4 matView;
+uniform mat4 matModel;
+
+uniform float realtime;
+
+out vec2 outVecTexCoord;
+out vec2 outVecLightmapCoord;
+
+void main()
+{
+	vec3 vecPos;
+	
+	vecPos[0] = vecPosition[0] + 8 * sin( vecPosition[ 1 ] * 0.05 + realtime ) * sin( vecPosition[ 2 ] * 0.05 + realtime );
+	vecPos[1] = vecPosition[1] + 8 * sin( vecPosition[ 0 ] * 0.05 + realtime ) * sin( vecPosition[ 2 ] * 0.05 + realtime );
+	vecPos[2] = vecPosition[2];
+		
+	gl_Position = matProj * matView * matModel * vec4( vecPos, 1 );
+	
+	outVecTexCoord = vecTexCoord;
+	outVecLightmapCoord = vecLightmapCoord;
+}

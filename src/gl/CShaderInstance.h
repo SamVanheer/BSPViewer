@@ -1,6 +1,8 @@
 #ifndef GL_CSHADERINSTANCE_H
 #define GL_CSHADERINSTANCE_H
 
+#include <glm/mat4x4.hpp>
+
 #include <gl/glew.h>
 
 class CBaseShader;
@@ -47,6 +49,15 @@ public:
 	*	Set up vertex attributes for drawing.
 	*/
 	void SetupVertexAttribs();
+
+	/**
+	*	Draw current data.
+	*/
+	void Draw( const size_t uiNumVerts );
+
+	const GLint* GetAttributes() const { return m_pAttributes; }
+
+	const GLint* GetUniforms() const { return m_pUniforms; }
 
 private:
 	/**

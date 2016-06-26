@@ -231,6 +231,8 @@ void CShaderInstance::SetupParams( const glm::mat4x4& projection, const glm::mat
 			check_gl_error();
 		}
 	}
+
+	m_pShader->Activate( this );
 }
 
 void CShaderInstance::SetupVertexAttribs()
@@ -255,6 +257,11 @@ void CShaderInstance::SetupVertexAttribs()
 
 		check_gl_error();
 	}
+}
+
+void CShaderInstance::Draw( const size_t uiNumVerts )
+{
+	m_pShader->OnDraw( this, uiNumVerts );
 }
 
 void CShaderInstance::OnPreLink()
