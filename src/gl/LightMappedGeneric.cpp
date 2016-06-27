@@ -1,3 +1,7 @@
+#include "entity/CBaseEntity.h"
+
+#include "CShaderInstance.h"
+
 #include "CBaseShader.h"
 
 /**
@@ -12,10 +16,32 @@ BEGIN_SHADER( LightMappedGeneric )
 
 		SHADER_UNIFORM( tex, SAMPLER_TEXTURE )
 		SHADER_UNIFORM( lightmap, SAMPLER_TEXTURE )
+		SHADER_UNIFORM( renderAmount, FLOAT )
 
 		SHADER_OUTPUT( outColor )
 
 	END_SHADER_ATTRIBS()
+
+	SHADER_ACTIVATE
+	{
+		float flRenderAmount = 255;
+
+		if( pEntity->GetRenderMode() == RenderMode::TEXTURE || pEntity->GetRenderMode() == RenderMode::ADDITIVE )
+		{
+			flRenderAmount = pEntity->GetRenderAmount();
+
+			if( pEntity->GetRenderMode() == RenderMode::TEXTURE )
+			{
+				glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+			}
+			else
+			{
+				glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+			}
+		}
+
+		glUniform1f( pInstance->GetUniforms()[ renderAmount ], flRenderAmount / 255.0f );
+	}
 
 	SHADER_DRAW
 	{

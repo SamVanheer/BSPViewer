@@ -13,6 +13,7 @@
 
 class CWindow;
 class CShaderInstance;
+class CBaseEntity;
 
 /**
 *	App class.
@@ -66,7 +67,7 @@ private:
 	/**
 	*	Renders a single model.
 	*/
-	void RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, bmodel_t& brushModel, size_t& uiCount, size_t& uiTriangles, double& flTotal );
+	void RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, const CBaseEntity* pEntity, bmodel_t& brushModel, size_t& uiCount, size_t& uiTriangles, double& flTotal );
 
 	void Event( const SDL_Event& event );
 
@@ -83,7 +84,7 @@ private:
 	CShaderInstance* m_pPolygonShader = nullptr;
 	CShaderInstance* m_pLightmapShader = nullptr;
 
-	bmodel_t m_Model;
+	bmodel_t* m_pModel;
 
 	CCamera m_Camera;
 

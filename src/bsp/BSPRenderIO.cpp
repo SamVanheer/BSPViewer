@@ -1556,8 +1556,10 @@ bool LoadBrushModel( bmodel_t* pModel, dheader_t* pHeader )
 
 			const auto result = g_WadManager.AddWad( pszWad );
 
+			//TODO: adding wads that don't exist is not a failure condition in the engine. - Solokiller
 			if( result != CWadManager::AddResult::SUCCESS && 
-				result != CWadManager::AddResult::ALREADY_ADDED )
+				result != CWadManager::AddResult::ALREADY_ADDED &&
+				result != CWadManager::AddResult::FILE_NOT_FOUND )
 				return false;
 
 			pszWad = pszNext + 1;

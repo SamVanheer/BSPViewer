@@ -10,6 +10,7 @@
 
 class CBaseShader;
 class CShaderInstance;
+class CBaseEntity;
 
 class CShaderManager final
 {
@@ -28,7 +29,8 @@ public:
 	CShaderInstance* GetActiveShader() const { return m_pActiveShader; }
 
 	//TODO: the matrices should come from somewhere else.
-	void ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model );
+	//TODO: shouldn't be directly referencing entities.
+	void ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, const CBaseEntity* pEntity );
 
 	void DeactivateActiveShader();
 

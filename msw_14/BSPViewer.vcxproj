@@ -92,6 +92,8 @@
     <ClCompile Include="..\src\app\CApp.cpp" />
     <ClCompile Include="..\src\bsp\BSPIO.cpp" />
     <ClCompile Include="..\src\bsp\BSPRenderIO.cpp" />
+    <ClCompile Include="..\src\entity\CBaseEntity.cpp" />
+    <ClCompile Include="..\src\entity\CEntityList.cpp" />
     <ClCompile Include="..\src\gl\CBaseShader.cpp" />
     <ClCompile Include="..\src\gl\CShaderInstance.cpp" />
     <ClCompile Include="..\src\gl\CShaderManager.cpp" />
@@ -121,6 +123,8 @@
     <ClInclude Include="..\src\common\Const.h" />
     <ClInclude Include="..\src\common\StringUtils.h" />
     <ClInclude Include="..\src\core\Platform.h" />
+    <ClInclude Include="..\src\entity\CBaseEntity.h" />
+    <ClInclude Include="..\src\entity\CEntityList.h" />
     <ClInclude Include="..\src\gl\CBaseShader.h" />
     <ClInclude Include="..\src\gl\CShaderInstance.h" />
     <ClInclude Include="..\src\gl\CShaderManager.h" />

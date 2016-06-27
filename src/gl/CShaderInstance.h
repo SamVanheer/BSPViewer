@@ -6,6 +6,7 @@
 #include <gl/glew.h>
 
 class CBaseShader;
+class CBaseEntity;
 
 class CShaderInstance final
 {
@@ -44,6 +45,11 @@ public:
 	*	Set up parameters for drawing.
 	*/
 	void SetupParams( const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model );
+
+	/**
+	*	Activates the shader for the given entity.
+	*/
+	void Activate( const CBaseEntity* pEntity );
 
 	/**
 	*	Set up vertex attributes for drawing.

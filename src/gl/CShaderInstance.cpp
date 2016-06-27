@@ -231,8 +231,11 @@ void CShaderInstance::SetupParams( const glm::mat4x4& projection, const glm::mat
 			check_gl_error();
 		}
 	}
+}
 
-	m_pShader->Activate( this );
+void CShaderInstance::Activate( const CBaseEntity* pEntity )
+{
+	m_pShader->Activate( this, pEntity );
 }
 
 void CShaderInstance::SetupVertexAttribs()

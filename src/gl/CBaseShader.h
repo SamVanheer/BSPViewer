@@ -9,6 +9,8 @@
 
 #include "GLUtil.h"
 
+class CBaseEntity;
+
 #define SHADER_BASE_DIR "shaders/"
 #define SHADER_VERTEX_EXT ".vtx"
 #define SHADER_FRAG_EXT ".frag"
@@ -201,7 +203,7 @@ public:																			\
 		return g_Outputs[ uiIndex ];											\
 	}
 
-#define SHADER_ACTIVATE void Activate( CShaderInstance* pInstance ) override
+#define SHADER_ACTIVATE void Activate( CShaderInstance* pInstance, const CBaseEntity* pEntity ) override
 
 #define SHADER_DRAW void OnDraw( CShaderInstance* pInstance, const size_t uiNumVerts ) override
 
@@ -236,7 +238,7 @@ public:
 	virtual size_t GetNumOutputs() const = 0;
 	virtual CBaseShaderOutput* GetOutput( const size_t uiIndex ) const = 0;
 
-	virtual void Activate( CShaderInstance* pInstance ) {}
+	virtual void Activate( CShaderInstance* pInstance, const CBaseEntity* pEntity ) {}
 
 	virtual void OnDraw( CShaderInstance* pInstance, const size_t uiNumVerts ) = 0;
 

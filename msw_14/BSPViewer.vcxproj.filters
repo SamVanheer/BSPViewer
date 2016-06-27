@@ -55,6 +55,12 @@
     <Filter Include="Header Files\core">
       <UniqueIdentifier>{5fb1a401-f455-49bb-9b66-b85501ca8617}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\entity">
+      <UniqueIdentifier>{45dcf452-5f0d-485d-94cd-1349b92aff53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\entity">
+      <UniqueIdentifier>{4b5b5742-20d2-4492-ad3e-212ec0904317}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\Main.cpp">
@@ -119,6 +125,12 @@
     </ClCompile>
     <ClCompile Include="..\src\gl\LightMappedWater.cpp">
       <Filter>Source Files\gl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\entity\CBaseEntity.cpp">
+      <Filter>Source Files\entity</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\entity\CEntityList.cpp">
+      <Filter>Source Files\entity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -202,6 +214,12 @@
     </ClInclude>
     <ClInclude Include="..\src\gl\CShaderInstance.h">
       <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\entity\CBaseEntity.h">
+      <Filter>Header Files\entity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\entity\CEntityList.h">
+      <Filter>Header Files\entity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

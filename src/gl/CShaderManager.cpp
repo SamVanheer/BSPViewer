@@ -61,32 +61,34 @@ bool CShaderManager::AddShader( CBaseShader* pShader )
 	return true;
 }
 
-void CShaderManager::ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model )
+void CShaderManager::ActivateShader( CShaderInstance* pShader, const glm::mat4x4& projection, const glm::mat4x4& view, const glm::mat4x4& model, const CBaseEntity* pEntity )
 {
 	assert( pShader );
 
 	if( !pShader )
 		return;
 
-	if( m_pActiveShader == pShader )
-		return;
+	if( m_pActiveShader != pShader )
+	{
+		if( m_pActiveShader )
+			DeactivateActiveShader();
 
-	if( m_pActiveShader )
-		DeactivateActiveShader();
+		m_pActiveShader = pShader;
 
-	m_pActiveShader = pShader;
+		m_pActiveShader->Bind();
 
-	m_pActiveShader->Bind();
+		check_gl_error();
 
-	check_gl_error();
+		m_pActiveShader->EnableVAA();
 
-	m_pActiveShader->EnableVAA();
+		check_gl_error();
 
-	check_gl_error();
+		m_pActiveShader->SetupParams( projection, view, model );
 
-	m_pActiveShader->SetupParams( projection, view, model );
+		check_gl_error();
+	}
 
-	check_gl_error();
+	m_pActiveShader->Activate( pEntity );
 }
 
 void CShaderManager::DeactivateActiveShader()
