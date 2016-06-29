@@ -15,7 +15,7 @@ GLEW: Version 1.13.0.0
 GLM: Version 0.9.6.3
 
 All third party libraries are referenced as though they were placed in the external/ directory.
-Each library is stored in the same manner:
-LIBNAME/ 
-+-include 
-+-lib 
+Each library is stored in the same manner:  
+LIBNAME/  
++-include  
++-lib  
