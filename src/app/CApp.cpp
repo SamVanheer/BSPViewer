@@ -23,242 +23,13 @@
 #include "bsp/BSPIO.h"
 #include "bsp/BSPRenderIO.h"
 
-#include "wad/WadIO.h"
-#include "wad/CWadFile.h"
 #include "wad/CWadManager.h"
-
-#include "gl/GLMiptex.h"
 
 #include "entity/CEntityList.h"
 #include "entity/CBaseEntity.h"
-
-#include "utility/Tokenization.h"
+#include "entity/EntityIO.h"
 
 #include "CApp.h"
-
-bool ED_FindClassName( char* data )
-{
-	char keyname[ 256 ];
-
-	// go through all the dictionary pairs
-	while( 1 )
-	{
-		// parse key
-		data = COM_Parse( data );
-		if( com_token[ 0 ] == '}' )
-			break;
-		if( !data )
-		{
-			printf( "ED_ParseEntity: EOF without closing brace\n" );
-			return false;
-		}
-
-		strcpy( keyname, com_token );
-
-		// another hack to fix heynames with trailing spaces
-		size_t n = strlen( keyname );
-		while( n && keyname[ n - 1 ] == ' ' )
-		{
-			keyname[ n - 1 ] = 0;
-			n--;
-		}
-
-		// parse value	
-		data = COM_Parse( data );
-		if( !data )
-		{
-			printf( "ED_ParseEntity: EOF without closing brace\n" );
-			return false;
-		}
-
-		if( com_token[ 0 ] == '}' )
-		{
-			printf( "ED_ParseEntity: closing brace without data\n" );
-			return false;
-		}
-
-		if( strcmp( keyname, "classname" ) == 0 )
-			return true;
-	}
-
-	return false;
-}
-
-/*
-====================
-ED_ParseEdict
-
-Parses an edict out of the given string, returning the new position
-ed should be a properly initialized empty edict.
-Used for initial level load and for savegames.
-====================
-*/
-bool ED_ParseEdict( char *data, char*& pszOut, CBaseEntity*& pEnt )
-{
-	bool	anglehack;
-	char		keyname[ 256 ];
-	int			n;
-
-	pEnt = nullptr;
-
-	bool init = false;
-
-	if( !ED_FindClassName( data ) )
-	{
-		printf( "ED_ParseEdict: couldn't find classname\n" );
-		return false;
-	}
-
-	CBaseEntity* pEntity = g_EntList.Create( com_token );
-
-	if( !pEntity )
-	{
-		printf( "ED_ParseEdict: Couldn't create entity '%s'\n", com_token );
-		return false;
-	}
-
-	// go through all the dictionary pairs
-	while( 1 )
-	{
-		// parse key
-		data = COM_Parse( data );
-		if( com_token[ 0 ] == '}' )
-			break;
-		if( !data )
-		{
-			printf( "ED_ParseEntity: EOF without closing brace\n" );
-			g_EntList.Destroy( pEntity );
-			return false;
-		}
-
-		// anglehack is to allow QuakeEd to write single scalar angles
-		// and allow them to be turned into vectors. (FIXME...)
-		if( !strcmp( com_token, "angle" ) )
-		{
-			strcpy( com_token, "angles" );
-			anglehack = true;
-		}
-		else
-			anglehack = false;
-
-		// FIXME: change light to _light to get rid of this hack
-		if( !strcmp( com_token, "light" ) )
-			strcpy( com_token, "light_lev" );	// hack for single light def
-
-		strcpy( keyname, com_token );
-
-		// another hack to fix heynames with trailing spaces
-		n = strlen( keyname );
-		while( n && keyname[ n - 1 ] == ' ' )
-		{
-			keyname[ n - 1 ] = 0;
-			n--;
-		}
-
-		// parse value	
-		data = COM_Parse( data );
-		if( !data )
-		{
-			printf( "ED_ParseEntity: EOF without closing brace\n" );
-			g_EntList.Destroy( pEntity );
-			return false;
-		}
-
-		if( com_token[ 0 ] == '}' )
-		{
-			printf( "ED_ParseEntity: closing brace without data\n" );
-			g_EntList.Destroy( pEntity );
-			return false;
-		}
-
-		init = true;
-
-		// keynames with a leading underscore are used for utility comments,
-		// and are immediately discarded by quake
-		if( keyname[ 0 ] == '_' )
-			continue;
-
-		if( anglehack )
-		{
-			char	temp[ 32 ];
-			strcpy( temp, com_token );
-			sprintf( com_token, "0 %s 0", temp );
-		}
-
-		if( !pEntity->KeyValue( keyname, com_token ) )
-		{
-			/*
-			printf( "ED_ParseEdict: parse error\n" );
-			g_EntList.Destroy( pEntity );
-			return false;
-			*/
-		}
-	}
-
-	pszOut = data;
-
-	pEnt = pEntity;
-
-	return true;
-}
-
-/*
-================
-ED_LoadFromFile
-
-The entities are directly placed in the array, rather than allocated with
-ED_Alloc, because otherwise an error loading the map would have entity
-number references out of order.
-
-Creates a server's entity / program execution context by
-parsing textual entity definitions out of an ent file.
-
-Used for both fresh maps and savegame loads.  A fresh map would also need
-to call ED_CallSpawnFunctions () to let the objects initialize themselves.
-================
-*/
-bool ED_LoadFromFile( char *data )
-{
-	int inhibit = 0;
-
-	CBaseEntity* pEnt;
-
-	// parse ents
-	while( 1 )
-	{
-		// parse the opening brace	
-		data = COM_Parse( data );
-		if( !data )
-			break;
-		if( com_token[ 0 ] != '{' )
-		{
-			printf( "ED_LoadFromFile: found %s when expecting {", com_token );
-			return false;
-		}
-
-		if( !ED_ParseEdict( data, data, pEnt ) )
-			return false;
-
-		// remove things from different skill levels or deathmatch
-		/*
-		if( deathmatch.value )
-		{
-			if( ( ( int ) ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH ) )
-			{
-				ED_Free( ent );
-				inhibit++;
-				continue;
-			}
-		}
-		*/
-
-		pEnt->Spawn();
-	}
-
-	printf( "%i entities inhibited\n", inhibit );
-
-	return true;
-}
 
 const float CApp::ROTATE_SPEED = 120.0f;
 const float CApp::MOVE_SPEED = 100.0f;
@@ -292,6 +63,7 @@ int CApp::Run( int iArgc, char* pszArgV[] )
 				if( ED_LoadFromFile( m_pModel->entities ) )
 				{
 					//Set up worldspawn.
+					//TODO: how is this supposed to work in the actual engine? - Solokiller
 					g_EntList.GetFirstEntity()->KeyValue( "model", m_pModel->name );
 				}
 				else
@@ -375,11 +147,6 @@ bool CApp::RunApp()
 
 	//Enable text input
 	//SDL_StartTextInput();
-
-	//TODO: shaders should be managed in a different way. Eventually this will be solved - Solokiller
-	m_pPolygonShader = g_ShaderManager.GetShader( "Polygon" );
-
-	m_pLightmapShader = g_ShaderManager.GetShader( "LightMappedGeneric" );
 
 	check_gl_error();
 
@@ -473,9 +240,7 @@ void CApp::Render()
 
 	const float flAspect = static_cast<float>( width ) / static_cast<float>( height );
 
-	auto projection = glm::ortho( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 1.0f, -1.0f );
-
-	projection = glm::perspective( glm::radians( 75.0f ), flAspect, 0.1f, 10000.0f );
+	auto projection = glm::perspective( glm::radians( 75.0f ), flAspect, 0.1f, 10000.0f );
 
 	glm::mat4x4 view;
 	
@@ -497,24 +262,14 @@ void CApp::Render()
 
 	double flTotal = 0;
 
-	//TODO: only needed for transparent entities. - Solokiller
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
-
 	for( CBaseEntity* pEntity = g_EntList.GetFirstEntity(); pEntity; pEntity = g_EntList.GetNextEntity( pEntity ) )
 	{
 		if( auto pModel = pEntity->GetBrushModel() )
 		{
+			//TODO: Should tidy up these parameters. - Solokiller
 			RenderModel( projection, view, model, pEntity, *pModel, uiCount, uiTriangles, flTotal );
 		}
 	}
-
-	/*
-	for( int iIndex = 0; iIndex < BSP::mod_numknown; ++iIndex )
-	{
-		RenderModel( projection, view, model, BSP::mod_known[ iIndex ], uiCount, uiTriangles, flTotal );
-	}
-	*/
 
 	std::chrono::milliseconds now2 = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now().time_since_epoch() );
 
@@ -535,7 +290,7 @@ void CApp::RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, 
 {
 	msurface_t* pSurface = brushModel.surfaces + brushModel.firstmodelsurface;
 
-	CShaderInstance* pShader = m_pLightmapShader;
+	CShaderInstance* pShader;
 
 	//TODO: need to sort transparent surfaces - Solokiller
 	for( int iIndex = 0; iIndex < brushModel.nummodelsurfaces; ++iIndex, ++pSurface )

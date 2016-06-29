@@ -12,7 +12,6 @@
 #include "utility/CCamera.h"
 
 class CWindow;
-class CShaderInstance;
 class CBaseEntity;
 
 /**
@@ -81,8 +80,6 @@ private:
 
 private:
 	CWindow* m_pWindow = nullptr;
-	CShaderInstance* m_pPolygonShader = nullptr;
-	CShaderInstance* m_pLightmapShader = nullptr;
 
 	bmodel_t* m_pModel;
 

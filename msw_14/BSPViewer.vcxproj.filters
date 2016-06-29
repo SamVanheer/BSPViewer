@@ -132,6 +132,9 @@
     <ClCompile Include="..\src\entity\CEntityList.cpp">
       <Filter>Source Files\entity</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\entity\EntityIO.cpp">
+      <Filter>Source Files\entity</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ui\CWindow.h">
@@ -219,6 +222,9 @@
       <Filter>Header Files\entity</Filter>
     </ClInclude>
     <ClInclude Include="..\src\entity\CEntityList.h">
+      <Filter>Header Files\entity</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\entity\EntityIO.h">
       <Filter>Header Files\entity</Filter>
     </ClInclude>
   </ItemGroup>
