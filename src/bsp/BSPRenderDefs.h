@@ -548,9 +548,6 @@ struct bmodel_t
 
 	hull_t		hulls[ MAX_MAP_HULLS ];
 
-	int			numtextures;
-	texture_t	**textures;
-
 	byte		*visdata;
 	byte		*lightdata;
 	char		*entities;

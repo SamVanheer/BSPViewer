@@ -129,18 +129,12 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 	//No textures to load.
 	if( !l->filelen )
 	{
-		pModel->textures = nullptr;
-		return true;
+		return g_TextureManager.Initialize( 0 );
 	}
 
 	dmiptexlump_t* m = ( dmiptexlump_t* ) ( mod_base + l->fileofs );
 
 	m->nummiptex = LittleValue( m->nummiptex );
-
-	pModel->numtextures = m->nummiptex;
-	pModel->textures = new texture_t*[ m->nummiptex ];
-
-	memset( pModel->textures, 0, sizeof( texture_t* ) * m->nummiptex );
 
 	if( !g_TextureManager.Initialize( m->nummiptex ) )
 		return false;
@@ -163,9 +157,12 @@ bool Mod_LoadTextures( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		}
 		pixels = mt->width*mt->height / 64 * 85;
 
-		//Load the texture. Internal or external, doesn't matter.
-		//TODO: the textures array is obsolete now. - Solokiller
-		pModel->textures[ i ] = g_TextureManager.LoadTexture( mt->name, mt->offsets[ 0 ] > 0 ? mt : nullptr );
+		/*
+		*	Load the texture. Internal or external, doesn't matter.
+		*	The miptex index should map to the correct texture here, but for the case where something goes wrong, it shouldn't be used directly.
+		*	Use the miptex index into the miptexlump instead. - Solokiller
+		*/
+		g_TextureManager.LoadTexture( mt->name, mt->offsets[ 0 ] > 0 ? mt : nullptr );
 
 		/*
 		TODO: fix this - Solokiller
@@ -267,7 +264,7 @@ Mod_LoadTexinfo
 */
 bool Mod_LoadTexinfo( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 {
-	int		miptex;
+	size_t		miptex;
 	float	len1, len2;
 
 	byte* mod_base = reinterpret_cast<byte*>( pHeader );
@@ -287,6 +284,8 @@ bool Mod_LoadTexinfo( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 	pModel->texinfo = out;
 	pModel->numtexinfo = count;
 
+	dmiptexlump_t* m = ( dmiptexlump_t* ) ( mod_base + pHeader->lumps[ LUMP_TEXTURES ].fileofs );
+
 	for( size_t i = 0; i<count; i++, in++, out++ )
 	{
 		for( size_t j = 0; j<8; j++ )
@@ -294,7 +293,7 @@ bool Mod_LoadTexinfo( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		len1 = glm::length( *reinterpret_cast<Vector*>( &out->vecs[ 0 ] ) );
 		len2 = glm::length( *reinterpret_cast<Vector*>( &out->vecs[ 1 ] ) );
 		len1 = ( len1 + len2 ) / 2;
-		//TODO: is mipadjust used? - Solokliler
+		//TODO: is mipadjust used? - Solokiller
 		if( len1 < 0.32 )
 			out->mipadjust = 4;
 		else if( len1 < 0.49 )
@@ -313,22 +312,26 @@ bool Mod_LoadTexinfo( bmodel_t* pModel, dheader_t* pHeader, lump_t* l )
 		miptex = LittleValue( in->miptex );
 		out->flags = LittleValue( in->flags );
 
-		if( !pModel->textures )
+		if( !g_TextureManager.HasTextures() )
 		{
 			out->texture = r_notexture_mip;	// checkerboard texture
 			out->flags = 0;
 		}
 		else
 		{
-			if( miptex >= pModel->numtextures )
+			if( miptex >= g_TextureManager.GetMaxTextures() )
 			{
 				printf( "miptex >= loadmodel->numtextures\n" );
 				return false;
 			}
 
-			out->texture = pModel->textures[ miptex ];
+			miptex_t* pMiptex = reinterpret_cast<miptex_t*>( reinterpret_cast<byte*>( m ) + m->dataofs[ miptex ] );
+
+			out->texture = g_TextureManager.FindTexture( pMiptex->name );
+
 			if( !out->texture )
 			{
+				printf( "Couldn't find texture \"%s\"\n", pMiptex->name );
 				out->texture = r_notexture_mip; // texture not found
 				out->flags = 0;
 			}
@@ -1771,7 +1774,6 @@ void FreeModel( bmodel_t* pModel )
 	//The textures themselves are managed by CTextureManager now, so don't delete them here. - Solokiller
 	g_TextureManager.Shutdown();
 
-	delete[] pModel->textures;
 	delete[] pModel->visdata;
 	delete[] pModel->lightdata;
 	delete[] pModel->entities;

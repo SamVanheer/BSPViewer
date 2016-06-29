@@ -38,6 +38,21 @@ public:
 	bool IsInitialized() const { return m_bInitialized; }
 
 	/**
+	*	@return Whether any textures are loaded.
+	*/
+	bool HasTextures() const { return m_uiTexturesInUse > 0; }
+
+	/**
+	*	@return The maximum number of textures that can be loaded into memory.
+	*/
+	size_t GetMaxTextures() const { return m_Textures.size(); }
+
+	/**
+	*	@return The number of textures that are loaded into memory.
+	*/
+	size_t GetNumTextures() const { return m_uiTexturesInUse; }
+
+	/**
 	*	Initializes the manager.
 	*	@param uiNumTextures Number of textures that will be loaded.
 	*	@return Whether initialization succeeded.

@@ -28,16 +28,26 @@ BEGIN_SHADER( LightMappedGeneric )
 
 		if( pEntity->GetRenderMode() == RenderMode::TEXTURE || pEntity->GetRenderMode() == RenderMode::ADDITIVE )
 		{
+			glEnable( GL_BLEND );
+			glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+
 			flRenderAmount = pEntity->GetRenderAmount();
 
 			if( pEntity->GetRenderMode() == RenderMode::TEXTURE )
 			{
-				glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+				glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+				glColor4f( 1.0, 1.0, 1.0, flRenderAmount );
 			}
 			else
 			{
 				glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+				glColor4f( flRenderAmount, flRenderAmount, flRenderAmount, 1.0 );
 			}
+		}
+		else
+		{
+			glDisable( GL_BLEND );
+			glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
 		}
 
 		glUniform1f( pInstance->GetUniforms()[ renderAmount ], flRenderAmount / 255.0f );

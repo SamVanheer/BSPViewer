@@ -537,6 +537,7 @@ void CApp::RenderModel( const glm::mat4x4& projection, const glm::mat4x4& view, 
 
 	CShaderInstance* pShader = m_pLightmapShader;
 
+	//TODO: need to sort transparent surfaces - Solokiller
 	for( int iIndex = 0; iIndex < brushModel.nummodelsurfaces; ++iIndex, ++pSurface )
 	{
 		//Sky, origin, aaatrigger, etc. Don't draw these.
